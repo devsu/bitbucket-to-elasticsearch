@@ -1,0 +1,24 @@
+{
+  "name": "bitbucket-to-elasticsearch",
+  "version": "1.0.0",
+  "description": "A utility to import the information from Bitbucket cloud to Elastic Search for analytics.",
+  "main": "index.js",
+  "repository": "https://github.com/devsu/bitbucket-to-elasticsearch",
+  "author": "Cesar Salazar @ Devsu",
+  "license": "MIT",
+  "scripts": {
+    "test": "yarn run unit && yarn run integration",
+    "unit": "jest -c jest.config.unit.js",
+    "integration": "./integration-tests/run.sh",
+    "setup-integration": "./integration-tests/setup.sh"
+  },
+  "devDependencies": {
+    "jest": "^23.5.0",
+    "moxios": "^0.4.0"
+  },
+  "dependencies": {
+    "axios": "^0.18.0",
+    "client-oauth2": "^4.2.1",
+    "elasticsearch": "^15.1.1"
+  }
+}

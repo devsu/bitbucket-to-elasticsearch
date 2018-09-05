@@ -1,0 +1,17 @@
+version: '3'
+
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.4.0
+    environment:
+      - discovery.type=single-node
+    ports:
+      - 9200
+      - 9300
+    tmpfs:
+      - /usr/share/elasticsearch/data
+    healthcheck:
+      test: "curl -s \"localhost:9200/_cluster/health\" | grep green -q"
+      interval: 5s
+      timeout: 3s
+      retries: 5
