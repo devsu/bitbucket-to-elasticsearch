@@ -11,7 +11,7 @@ services:
     tmpfs:
       - /usr/share/elasticsearch/data
     healthcheck:
-      test: "curl -s \"localhost:9200/_cluster/health\" | grep green -q"
+      test: "curl -s localhost:9200/_cluster/health | grep -e green -e yellow -q"
       interval: 5s
       timeout: 3s
       retries: 5

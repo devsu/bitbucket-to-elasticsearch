@@ -1,0 +1,23 @@
+{
+  "id": "6de4deee89aafee431b9382af5fce0f2b744c603",
+  "hash": "6de4deee89aafee431b9382af5fce0f2b744c603",
+  "repository": {
+    "uuid": "a95d72fe-441a-4d7d-bb69-2118647bd72b",
+    "name": "eslint-plugin-devsu",
+    "full_name": "devsu/eslint-plugin-devsu"
+  },
+  "author": {
+    "raw": "Jaime Gonzalez <jgonzalez@devsu.com>",
+    "type": "author",
+    "user": {
+      "username": "jgonzalez87",
+      "display_name": "Jaime Gonzalez",
+      "type": "user",
+      "uuid": "8b22b5fe-37db-4fcb-861f-4979c3cfb048"
+    }
+  },
+  "parents": ["97c944512ae08fec7429125ed67d0b6042a9087b", "e53e38697d5dd113f998594ac66eda8ebe1c663c"],
+  "date": "2016-08-05T17:19:48+00:00",
+  "message": "Merged in ocd-config (pull request #12)\n\nOCD rules added.\n",
+  "type": "commit"
+}

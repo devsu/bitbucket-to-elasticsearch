@@ -13,12 +13,19 @@
     "setup-integration": "./integration-tests/setup.sh"
   },
   "devDependencies": {
+    "@babel/core": "^7.0.0",
+    "@babel/preset-env": "^7.0.0",
     "axios-mock-adapter": "^1.15.0",
-    "jest": "^23.5.0"
+    "babel-core": "^7.0.0-0",
+    "babel-jest": "^23.4.2",
+    "jest": "^23.5.0",
+    "regenerator-runtime": "^0.12.1"
   },
   "dependencies": {
     "axios": "^0.18.0",
+    "bunyan": "^1.8.12",
     "client-oauth2": "^4.2.1",
-    "elasticsearch": "^15.1.1"
+    "elasticsearch": "^15.1.1",
+    "p-queue": "^3.0.0"
   }
 }

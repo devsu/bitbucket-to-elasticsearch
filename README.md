@@ -2,6 +2,10 @@
 
 A utility to import the information from Bitbucket cloud to Elastic Search for analytics.
 
+## Status
+
+Under development, not working yet
+
 ## Installation and Usage
 
 ```

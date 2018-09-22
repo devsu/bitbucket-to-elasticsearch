@@ -1,0 +1,104 @@
+{
+  "scm": "git",
+  "website": "",
+  "has_wiki": false,
+  "uuid": "{a95d72fe-441a-4d7d-bb69-2118647bd72b}",
+  "links": {
+    "watchers": {
+      "href": "https://api.bitbucket.org/2.0/repositories/devsu/eslint-plugin-devsu/watchers"
+    },
+    "branches": {
+      "href": "https://api.bitbucket.org/2.0/repositories/devsu/eslint-plugin-devsu/refs/branches"
+    },
+    "tags": {
+      "href": "https://api.bitbucket.org/2.0/repositories/devsu/eslint-plugin-devsu/refs/tags"
+    },
+    "commits": {
+      "href": "https://api.bitbucket.org/2.0/repositories/devsu/eslint-plugin-devsu/commits"
+    },
+    "clone": [
+      {
+        "href": "https://bitbucket.org/devsu/eslint-plugin-devsu.git",
+        "name": "https"
+      },
+      {
+        "href": "git@bitbucket.org:devsu/eslint-plugin-devsu.git",
+        "name": "ssh"
+      }
+    ],
+    "self": {
+      "href": "https://api.bitbucket.org/2.0/repositories/devsu/eslint-plugin-devsu"
+    },
+    "source": {
+      "href": "https://api.bitbucket.org/2.0/repositories/devsu/eslint-plugin-devsu/src"
+    },
+    "html": {
+      "href": "https://bitbucket.org/devsu/eslint-plugin-devsu"
+    },
+    "avatar": {
+      "href": "https://bytebucket.org/ravatar/%7Ba95d72fe-441a-4d7d-bb69-2118647bd72b%7D?ts=js"
+    },
+    "hooks": {
+      "href": "https://api.bitbucket.org/2.0/repositories/devsu/eslint-plugin-devsu/hooks"
+    },
+    "forks": {
+      "href": "https://api.bitbucket.org/2.0/repositories/devsu/eslint-plugin-devsu/forks"
+    },
+    "downloads": {
+      "href": "https://api.bitbucket.org/2.0/repositories/devsu/eslint-plugin-devsu/downloads"
+    },
+    "pullrequests": {
+      "href": "https://api.bitbucket.org/2.0/repositories/devsu/eslint-plugin-devsu/pullrequests"
+    }
+  },
+  "fork_policy": "allow_forks",
+  "name": "eslint-plugin-devsu",
+  "project": {
+    "key": "DEV",
+    "type": "project",
+    "uuid": "{6cb7db6a-e001-48e7-ab37-b1968938140a}",
+    "links": {
+      "self": {
+        "href": "https://api.bitbucket.org/2.0/teams/devsu/projects/DEV"
+      },
+      "html": {
+        "href": "https://bitbucket.org/account/user/devsu/projects/DEV"
+      },
+      "avatar": {
+        "href": "https://bitbucket.org/account/user/devsu/projects/DEV/avatar/32"
+      }
+    },
+    "name": "Devsu"
+  },
+  "language": "javascript",
+  "created_on": "2016-06-30T16:39:36.923050+00:00",
+  "mainbranch": {
+    "type": "branch",
+    "name": "master"
+  },
+  "full_name": "devsu/eslint-plugin-devsu",
+  "has_issues": false,
+  "owner": {
+    "username": "devsu",
+    "display_name": "Devsu",
+    "type": "team",
+    "uuid": "{81e7b7ab-6b55-4d02-8602-dd86f00533fa}",
+    "links": {
+      "self": {
+        "href": "https://api.bitbucket.org/2.0/teams/devsu"
+      },
+      "html": {
+        "href": "https://bitbucket.org/devsu/"
+      },
+      "avatar": {
+        "href": "https://bitbucket.org/account/devsu/avatar/"
+      }
+    }
+  },
+  "updated_on": "2016-08-05T17:19:50.086366+00:00",
+  "size": 434256,
+  "type": "repository",
+  "slug": "eslint-plugin-devsu",
+  "is_private": false,
+  "description": ""
+}
