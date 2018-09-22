@@ -16,6 +16,7 @@ module.exports = class Sync {
       await this.bitbucket.authenticate();
     }
     await this.database.setup();
+    await this.synchronizeRepositories();
   }
 
   async synchronizeRepositories() {
@@ -23,13 +24,15 @@ module.exports = class Sync {
     const promises = [];
     for await (const data of reposIterator) {
       const repositories = data.values;
+      const slugs = Sync.obtainSlugs(repositories);
       promises.push(this.database.saveRepositories(Sync.transformRepositories(repositories)));
+      promises.push(...slugs.map((slug) => this.synchronizeCommits(slug)));
     }
     await Promise.all(promises);
   }
 
   async synchronizeCommits(repoSlug) {
-    await this.database.setup();
+
     const commitsIterator = this.bitbucket.getCommitsIterator(repoSlug);
     const promises = [];
     for await (const data of commitsIterator) {
@@ -71,5 +74,9 @@ module.exports = class Sync {
 
   static transformCommits(data) {
     return data.map(Sync.transformCommit);
+  }
+
+  static obtainSlugs(data) {
+    return data.map((item) => item.slug);
   }
 };

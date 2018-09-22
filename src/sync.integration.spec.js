@@ -42,6 +42,17 @@ describe('BitbucketSync integration tests', () => {
         expect(exists).toEqual(true);
       });
     });
+
+    // TODO: These tests might be improved
+    test('should import repositories and their commits', async() => {
+      await bitbucketSync.execute();
+      await elastic.indices.flush({'waitIfOngoing': true});
+      await elastic.indices.refresh();
+      const result1 = await elastic.count({'index': 'repositories'});
+      const result2 = await elastic.count({'index': 'commits'});
+      expect(result1.count).toBeGreaterThan(0);
+      expect(result2.count).toBeGreaterThan(0);
+    });
   });
 
   describe('synchronizeRepositories()', () => {
@@ -49,6 +60,13 @@ describe('BitbucketSync integration tests', () => {
       await bitbucketSync.synchronizeRepositories();
       await elastic.indices.refresh();
       const {count} = await elastic.count({'index': 'repositories'});
+      expect(count).toBeGreaterThan(0);
+    });
+
+    test('should import commits', async() => {
+      await bitbucketSync.synchronizeRepositories();
+      await elastic.indices.refresh();
+      const {count} = await elastic.count({'index': 'commits'});
       expect(count).toBeGreaterThan(0);
     });
   });

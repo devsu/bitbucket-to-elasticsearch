@@ -75,4 +75,11 @@ describe('BitbucketSync', () => {
       expect(actual).toEqual([esCommitData, esCommitData]);
     });
   });
+
+  describe('obtainSlugs()', () => {
+    test('should return an array with the repo slugs', () => {
+      const actual = BitbucketSync.obtainSlugs([bitbucketRepositoryData, bitbucketRepositoryData]);
+      expect(actual).toEqual([bitbucketRepositoryData.slug, bitbucketRepositoryData.slug]);
+    });
+  });
 });
