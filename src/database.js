@@ -40,7 +40,10 @@ class Database {
       'index': 'repositories',
       'body': {'aggs': {'maxDate': {'max': {'field': 'updated_on'}}}},
     });
-    return response.aggregations.maxDate.value_as_string;
+    if (!response.aggregations.maxDate.value_as_string) {
+      return null;
+    }
+    return new Date(response.aggregations.maxDate.value_as_string);
   }
 
   static getBulkUpsertBody(index, type, data) {

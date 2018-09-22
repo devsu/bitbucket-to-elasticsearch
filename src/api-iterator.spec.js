@@ -92,6 +92,31 @@ describe('ApiIterator', () => {
       await iterator.next();
       expect(queue.add).toHaveBeenCalledTimes(1);
     });
+
+    test('should set the currentState', async() => {
+      const result = await iterator.next();
+      expect(iterator.currentState).toEqual(result);
+    });
+
+    describe('option: interceptorFn', () => {
+      let options;
+
+      beforeEach(() => {
+        options = {
+          'interceptorFn': jest.fn((it) => {
+            it.nextUrl = null;
+          }),
+        };
+        iterator = new BitbucketApiIterator(queue, httpClient, url, options);
+      });
+
+      test('should tun the interceptorFn', async() => {
+        const result = await iterator.next();
+        expect(result.done).toEqual(true);
+        expect(result.value).toBeUndefined();
+        expect(options.interceptorFn).toHaveBeenCalledTimes(1);
+      });
+    });
   });
 
   test('must be iterable', () => {

@@ -20,20 +20,20 @@ module.exports = class Sync {
   }
 
   async synchronizeRepositories() {
-    const reposIterator = this.bitbucket.getRepositoriesIterator();
+    let startDate = await this.database.getRepositoriesMaxDate();
+    const reposIterator = this.bitbucket.getRepositoriesIterator(startDate);
     const promises = [];
     for await (const data of reposIterator) {
       const repositories = data.values;
       const slugs = Sync.obtainSlugs(repositories);
       promises.push(this.database.saveRepositories(Sync.transformRepositories(repositories)));
-      promises.push(...slugs.map((slug) => this.synchronizeCommits(slug)));
+      promises.push(...slugs.map((slug) => this.synchronizeCommits(slug, startDate)));
     }
     await Promise.all(promises);
   }
 
-  async synchronizeCommits(repoSlug) {
-
-    const commitsIterator = this.bitbucket.getCommitsIterator(repoSlug);
+  async synchronizeCommits(repoSlug, startDate) {
+    const commitsIterator = this.bitbucket.getCommitsIterator(repoSlug, startDate);
     const promises = [];
     for await (const data of commitsIterator) {
       const commits = data.values;

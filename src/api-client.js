@@ -1,3 +1,4 @@
+const URL = require('url').URL;
 const ClientOAuth2 = require('client-oauth2');
 const axios = require('axios');
 const ApiIterator = require('./api-iterator');
@@ -51,16 +52,34 @@ module.exports = class ApiClient {
     return await auth.credentials.getToken();
   }
 
-  getRepositoriesIterator() {
-    const url = `${BITBUCKET_BASE_API_URL}/teams/${this.config.username}/repositories`;
-    return new ApiIterator(this.repositoriesQueue, this.axiosInstance, url);
+  getRepositoriesIterator(startDate) {
+    const url = new URL(`${BITBUCKET_BASE_API_URL}/repositories/${this.config.username}`);
+    url.searchParams.set('sort', '-updated_on');
+    if (startDate) {
+      url.searchParams.set('q', `updated_on > "${startDate.toISOString()}"`);
+    }
+    return new ApiIterator(this.repositoriesQueue, this.axiosInstance, url.toString());
   }
 
-  getCommitsIterator(repoSlug) {
+  getCommitsIterator(repoSlug, startDate) {
+    let options = null;
     if (!repoSlug) {
       throw new Error('repoSlug is required');
     }
+    if (startDate) {
+      options = {
+        'interceptorFn': (it) => {
+          if (!it.currentState || !it.currentState.value || !it.currentState.value.values) {
+            return;
+          }
+          const commits = it.currentState.value.values;
+          if (new Date(commits[commits.length - 1].date).getTime() >= startDate.getTime()) {
+            it.nextUrl = null;
+          }
+        }
+      }
+    }
     const url = `${BITBUCKET_BASE_API_URL}/repositories/${this.config.username}/${repoSlug}/commits`;
-    return new ApiIterator(this.commitsQueue, this.axiosInstance, url);
+    return new ApiIterator(this.commitsQueue, this.axiosInstance, url, options);
   }
 };

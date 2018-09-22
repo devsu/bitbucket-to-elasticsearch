@@ -188,22 +188,34 @@ describe('Database integration tests', () => {
   });
 
   describe('getRepositoriesMaxDate()', () => {
-    let expectedDate;
-
     beforeEach(async() => {
-      expectedDate = new Date().toISOString();
-      const first = Object.assign({}, repositoryData, {'id': 'first', 'updated_on': expectedDate});
-      const second = Object.assign({}, repositoryData, {'id': 'second'});
-      const data = [first, second];
       await database.setup();
       await elastic.indices.flush({'waitIfOngoing': true});
-      await database.saveRepositories(data);
-      await elastic.indices.refresh();
     });
 
-    test('should return the max updated_on date of repositories', async() => {
-      const actual = await database.getRepositoriesMaxDate();
-      expect(actual).toEqual(expectedDate);
+    describe('when no data', () => {
+      test('should return null', async() => {
+        const actual = await database.getRepositoriesMaxDate();
+        expect(actual).toBeNull();
+      });
+    });
+
+    describe('when there is data', () => {
+      let expectedDate;
+
+      beforeEach(async() => {
+        expectedDate = new Date();
+        const first = Object.assign({}, repositoryData, {'id': 'first', 'updated_on': expectedDate.toISOString()});
+        const second = Object.assign({}, repositoryData, {'id': 'second'});
+        const data = [first, second];
+        await database.saveRepositories(data);
+        await elastic.indices.refresh();
+      });
+
+      test('should return the max updated_on date of repositories', async() => {
+        const actual = await database.getRepositoriesMaxDate();
+        expect(actual).toEqual(expectedDate);
+      });
     });
   });
 });

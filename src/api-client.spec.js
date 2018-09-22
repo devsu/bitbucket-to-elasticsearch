@@ -1,3 +1,4 @@
+const URL = require('url').URL;
 const ClientOAuth2 = require('client-oauth2');
 const BitbucketApiClient = require('./api-client');
 const BitbucketApiIterator = require('./api-iterator');
@@ -62,7 +63,17 @@ describe('BitbucketApiClient', () => {
     test('should return an iterator pointing to the corresponding url', () => {
       const iterator = api.getRepositoriesIterator();
       expect(iterator).toBeInstanceOf(BitbucketApiIterator);
-      expect(iterator.nextUrl).toEqual(`https://api.bitbucket.org/2.0/teams/${config.username}/repositories`);
+      expect(iterator.nextUrl).toEqual(`https://api.bitbucket.org/2.0/repositories/${config.username}?sort=-updated_on`);
+    });
+
+    describe('when startDate received', () => {
+      test('should return an iterator to start on the specified start date', () => {
+        const startDate = new Date();
+        const iterator = api.getRepositoriesIterator(startDate);
+        const actualUrl = new URL(iterator.nextUrl);
+        expect(actualUrl.searchParams.get('sort')).toEqual('-updated_on');
+        expect(actualUrl.searchParams.get('q')).toEqual(`updated_on > "${startDate.toISOString()}"`);
+      });
     });
   });
 
@@ -87,7 +98,14 @@ describe('BitbucketApiClient', () => {
     test('should return an iterator pointing to the corresponding url', () => {
       const iterator = api.getCommitsIterator(repoSlug);
       expect(iterator).toBeInstanceOf(BitbucketApiIterator);
-      expect(iterator.nextUrl).toEqual(`https://api.bitbucket.org/2.0/repositories/${config.username}/${repoSlug}/commits`);
+      expect(iterator.nextUrl).toEqual(
+        `https://api.bitbucket.org/2.0/repositories/${config.username}/${repoSlug}/commits`);
+    });
+
+    describe('when startDate recieved', () => {
+      test.skip('should return an iterator that stops when reaching that date', () => {
+        // TODO: implement
+      });
     });
   });
 });

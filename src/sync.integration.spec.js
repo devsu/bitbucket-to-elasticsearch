@@ -26,10 +26,9 @@ describe('BitbucketSync integration tests', () => {
     bitbucketSync = new BitbucketSync(config);
     await elastic.indices.delete({'index': '_all'});
     await elastic.indices.flush({'waitIfOngoing': true});
-    const existsRepositories = await elastic.indices.exists({'index': 'repositories'});
-    const existsCommits = await elastic.indices.exists({'index': 'commits'});
-    expect(existsRepositories).toEqual(false);
-    expect(existsCommits).toEqual(false);
+    await elastic.indices.create({'index': 'repositories'});
+    await elastic.indices.create({'index': 'commits'});
+    await elastic.indices.flush({'waitIfOngoing': true});
   });
 
   describe('execute()', () => {
@@ -52,6 +51,12 @@ describe('BitbucketSync integration tests', () => {
       const result2 = await elastic.count({'index': 'commits'});
       expect(result1.count).toBeGreaterThan(0);
       expect(result2.count).toBeGreaterThan(0);
+    });
+
+    test('should not reimport existing content', async() => {
+      await bitbucketSync.execute();
+      await elastic.indices.refresh();
+      await bitbucketSync.execute();
     });
   });
 
