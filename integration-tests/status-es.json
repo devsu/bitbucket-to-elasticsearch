@@ -1,0 +1,22 @@
+{
+  "id": "e53e38697d5dd113f998594ac66eda8ebe1c663c-build-test-1",
+  "key": "build-test-1",
+  "description": "",
+  "repository": {
+    "type": "repository",
+    "name": "eslint-plugin-devsu",
+    "full_name": "devsu/eslint-plugin-devsu",
+    "uuid": "{a95d72fe-441a-4d7d-bb69-2118647bd72b}"
+  },
+  "url": "https://jenkins.devsu.us/build/build-test-1",
+  "refname": null,
+  "state": "SUCCESSFUL",
+  "created_on": "2018-10-03T22:14:05.929409+00:00",
+  "commit": {
+    "hash": "e53e38697d5dd113f998594ac66eda8ebe1c663c",
+    "type": "commit"
+  },
+  "updated_on": "2018-10-03T22:14:05.929471+00:00",
+  "type": "build",
+  "name": "build-test-1"
+}

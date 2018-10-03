@@ -1,9 +1,8 @@
 {
-  "id": "a95d72fe-441a-4d7d-bb69-2118647bd72b",
   "scm": "git",
   "website": "",
   "has_wiki": false,
-  "uuid": "a95d72fe-441a-4d7d-bb69-2118647bd72b",
+  "uuid": "{a95d72fe-441a-4d7d-bb69-2118647bd72b}",
   "fork_policy": "allow_forks",
   "name": "eslint-plugin-devsu",
   "project": "DEV",

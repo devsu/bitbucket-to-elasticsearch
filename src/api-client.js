@@ -25,12 +25,13 @@ module.exports = class ApiClient {
       'timeout': DEFAULT_TIMEOUT,
     };
     this.axiosInstance = axios.create(axiosOptions);
-    const queueOptions = {
+    const limitedQueueOptions = {
       'intervalCap': 800, // actual limit is 1000
       'interval': ONE_HOUR_IN_MILLIS,
     };
-    this.repositoriesQueue = Queue.getInstance('repositories', queueOptions);
-    this.commitsQueue = Queue.getInstance('commits', queueOptions);
+    this.repositoriesQueue = Queue.getInstance('repositories', limitedQueueOptions);
+    this.commitsQueue = Queue.getInstance('commits', limitedQueueOptions);
+    this.statusesQueue = Queue.getInstance('statuses');
   }
 
   async authenticate() {
@@ -81,5 +82,13 @@ module.exports = class ApiClient {
     }
     const url = `${BITBUCKET_BASE_API_URL}/repositories/${this.config.username}/${repoSlug}/commits`;
     return new ApiIterator(this.commitsQueue, this.axiosInstance, url, options);
+  }
+
+  getStatusesIterator(repoSlug, node) {
+    if (!repoSlug || !node) {
+      throw new Error('repoSlug and node are required');
+    }
+    const url = `${BITBUCKET_BASE_API_URL}/repositories/${this.config.username}/${repoSlug}/commit/${node}/statuses`;
+    return new ApiIterator(this.statusesQueue, this.axiosInstance, url.toString());
   }
 };

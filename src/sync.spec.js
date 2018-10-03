@@ -3,6 +3,8 @@ const bitbucketRepositoryData = require('../integration-tests/repository-bitbuck
 const esRepositoryData = require('../integration-tests/repository-es');
 const bitbucketCommitData = require('../integration-tests/commit-bitbucket');
 const esCommitData = require('../integration-tests/commit-es');
+const bitbucketStatusData = require('../integration-tests/status-bitbucket');
+const esStatusData = require('../integration-tests/status-es');
 
 describe('BitbucketSync', () => {
   let bitbucketSync, config;
@@ -15,6 +17,7 @@ describe('BitbucketSync', () => {
       'elasticsearch': {
       },
     };
+    bitbucketSync = new BitbucketSync(config);
   });
 
   describe('constructor', () => {
@@ -76,10 +79,28 @@ describe('BitbucketSync', () => {
     });
   });
 
+  describe('transformStatus()', () => {
+    test('should transform bitbucket data to elastic search data', () => {
+      const actual = BitbucketSync.transformStatus(bitbucketStatusData);
+      expect(actual).toEqual(esStatusData);
+    });
+  });
+
+  describe('transformStatuses()', () => {
+    test('should transform bitbucket data to elastic search data', () => {
+      const actual = BitbucketSync.transformStatuses([bitbucketStatusData, bitbucketStatusData]);
+      expect(actual).toEqual([esStatusData, esStatusData]);
+    });
+  });
+
   describe('obtainSlugs()', () => {
     test('should return an array with the repo slugs', () => {
       const actual = BitbucketSync.obtainSlugs([bitbucketRepositoryData, bitbucketRepositoryData]);
       expect(actual).toEqual([bitbucketRepositoryData.slug, bitbucketRepositoryData.slug]);
     });
   });
+
+  // TODO: Missing tests (functionality actually implemented, but no tests implemented)
+  // - should not fail when repo has no commits
+  // - should not fail when commit has no build statuses
 });

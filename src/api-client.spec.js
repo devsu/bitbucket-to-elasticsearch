@@ -102,10 +102,37 @@ describe('BitbucketApiClient', () => {
         `https://api.bitbucket.org/2.0/repositories/${config.username}/${repoSlug}/commits`);
     });
 
-    describe('when startDate recieved', () => {
-      test.skip('should return an iterator that stops when reaching that date', () => {
+    describe.skip('when startDate recieved', () => {
+      test('should return an iterator that stops when reaching that date', () => {
         // TODO: implement
       });
+    });
+  });
+
+  describe('getStatusesIterator()', () => {
+    let repoSlug, node, iterator;
+
+    beforeEach(() => {
+      repoSlug = 'my-repo-slug';
+      node = '1234567890';
+    });
+
+    describe('when missing required arguments', () => {
+      test('should throw error', () => {
+        try {
+          iterator = api.getStatusesIterator();
+          fail('should fail');
+        } catch (e) {
+          expect(e.message).toEqual('repoSlug and node are required');
+        }
+      });
+    });
+
+    test('should return an iterator pointing to the corresponding url', () => {
+      const iterator = api.getStatusesIterator(repoSlug, node);
+      expect(iterator).toBeInstanceOf(BitbucketApiIterator);
+      expect(iterator.nextUrl).toEqual(
+        `https://api.bitbucket.org/2.0/repositories/${config.username}/${repoSlug}/commit/${node}/statuses`);
     });
   });
 });

@@ -84,5 +84,23 @@ describe('BitbucketSync integration tests', () => {
       const {count} = await elastic.count({'index': 'commits'});
       expect(count).toBeGreaterThan(0);
     });
+
+    test('should import statuses', async() => {
+      await bitbucketSync.synchronizeRepositories();
+      await elastic.indices.refresh();
+      const {count} = await elastic.count({'index': 'statuses'});
+      expect(count).toBeGreaterThan(0);
+    });
+  });
+
+  describe('synchronizeStatuses()', () => {
+    test('should import statuses', async() => {
+      const repoSlug = 'eslint-plugin-devsu';
+      const node = 'e53e38697d5dd113f998594ac66eda8ebe1c663c';
+      await bitbucketSync.synchronizeStatuses(repoSlug, node);
+      await elastic.indices.refresh();
+      const {count} = await elastic.count({'index': 'statuses'});
+      expect(count).toBeGreaterThan(0);
+    });
   });
 });

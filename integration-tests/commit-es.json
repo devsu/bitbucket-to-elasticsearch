@@ -1,8 +1,7 @@
 {
-  "id": "6de4deee89aafee431b9382af5fce0f2b744c603",
   "hash": "6de4deee89aafee431b9382af5fce0f2b744c603",
   "repository": {
-    "uuid": "a95d72fe-441a-4d7d-bb69-2118647bd72b",
+    "uuid": "{a95d72fe-441a-4d7d-bb69-2118647bd72b}",
     "name": "eslint-plugin-devsu",
     "full_name": "devsu/eslint-plugin-devsu"
   },
@@ -13,7 +12,7 @@
       "username": "jgonzalez87",
       "display_name": "Jaime Gonzalez",
       "type": "user",
-      "uuid": "8b22b5fe-37db-4fcb-861f-4979c3cfb048"
+      "uuid": "{8b22b5fe-37db-4fcb-861f-4979c3cfb048}"
     }
   },
   "parents": ["97c944512ae08fec7429125ed67d0b6042a9087b", "e53e38697d5dd113f998594ac66eda8ebe1c663c"],

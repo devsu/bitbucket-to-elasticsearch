@@ -37,7 +37,25 @@ module.exports = class Sync {
     const promises = [];
     for await (const data of commitsIterator) {
       const commits = data.values;
+      if (!commits.length) {
+        continue;
+      }
+      const nodes = commits.map((commit) => commit.hash);
       promises.push(this.database.saveCommits(Sync.transformCommits(commits)));
+      promises.push(...nodes.map((node) => this.synchronizeStatuses(repoSlug, node)));
+    }
+    await Promise.all(promises);
+  }
+
+  async synchronizeStatuses(repoSlug, node) {
+    const statusesIterator = this.bitbucket.getStatusesIterator(repoSlug, node);
+    const promises = [];
+    for await (const data of statusesIterator) {
+      const statuses = data.values;
+      if (!statuses.length) {
+        continue;
+      }
+      promises.push(this.database.saveStatuses(Sync.transformStatuses(statuses)));
     }
     await Promise.all(promises);
   }
@@ -47,9 +65,7 @@ module.exports = class Sync {
     delete transformed.links;
     transformed.owner = data.owner.username;
     transformed.project = data.project.key;
-    transformed.mainbranch = data.mainbranch.name;
-    transformed.uuid = data.uuid.replace(/[{}]/g, '');
-    transformed.id = transformed.uuid;
+    transformed.mainbranch = data.mainbranch ? data.mainbranch.name : data.mainbranch;
     return transformed;
   }
 
@@ -65,15 +81,25 @@ module.exports = class Sync {
     delete transformed.repository.links;
     delete transformed.repository.type;
     delete transformed.summary;
-    transformed.id = data.hash;
-    transformed.author.user.uuid = data.author.user.uuid.replace(/[{}]/g, '');
-    transformed.repository.uuid = data.repository.uuid.replace(/[{}]/g, '');
     transformed.parents = data.parents.map((parent) => parent.hash);
     return transformed;
   }
 
   static transformCommits(data) {
     return data.map(Sync.transformCommit);
+  }
+
+  static transformStatus(data) {
+    const transformed = Object.assign({}, data);
+    delete transformed.links;
+    delete transformed.repository.links;
+    delete transformed.commit.links;
+    transformed.id = `${data.commit.hash}-${data.key}`;
+    return transformed;
+  }
+
+  static transformStatuses(data) {
+    return data.map(Sync.transformStatus);
   }
 
   static obtainSlugs(data) {
