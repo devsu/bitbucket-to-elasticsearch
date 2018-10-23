@@ -36,7 +36,7 @@ module.exports = class Sync {
     // consider updated_on value for updating only missing commits
     // TODO: Unit tests needed!
     repositories = Sync.transformRepositories(repositories);
-    const processRepositoryQueue = Queue.getQueue('processRepo', {'concurrency': 10});
+    const processRepositoryQueue = Queue.getQueue('processRepo', {'concurrency': 5});
     for (let i = 0; i < repositories.length; i++) {
       processRepositoryQueue.add(async() => {
         await this.synchronizeRepository(repositories[i]);

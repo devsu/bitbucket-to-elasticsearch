@@ -62,7 +62,7 @@ describe('BitbucketApiClient', () => {
     test('should return an iterator pointing to the corresponding url', () => {
       const iterator = api.getRepositoriesIterator();
       expect(iterator).toBeInstanceOf(BitbucketApiIterator);
-      expect(iterator.nextUrl).toEqual(`https://api.bitbucket.org/2.0/repositories/${config.username}`);
+      expect(iterator.nextUrl).toEqual(`https://api.bitbucket.org/2.0/repositories/${config.username}?sort=-updated_on`);
     });
   });
 

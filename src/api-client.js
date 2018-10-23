@@ -8,7 +8,7 @@ const BITBUCKET_BASE_API_URL = 'https://api.bitbucket.org/2.0';
 const BITBUCKET_ACCESS_TOKEN_URI = 'https://bitbucket.org/site/oauth2/access_token';
 const BITBUCKET_AUTHORIZATION_URI = 'https://bitbucket.org/site/oauth2/authorize';
 const DEFAULT_PAGE_LEN = 100;
-const DEFAULT_TIMEOUT = 20000;
+const DEFAULT_TIMEOUT = 10000;
 // const ONE_HOUR_IN_MILLIS = 60 * 60 * 1000;
 
 module.exports = class ApiClient {
@@ -56,6 +56,7 @@ module.exports = class ApiClient {
 
   getRepositoriesIterator() {
     const url = new URL(`${BITBUCKET_BASE_API_URL}/repositories/${this.config.username}`);
+    url.searchParams.set('sort', '-updated_on');
     return new ApiIterator(this.repositoriesQueue, this.axiosInstance, url.toString());
   }
 
