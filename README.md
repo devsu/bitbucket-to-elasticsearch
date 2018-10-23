@@ -41,6 +41,23 @@ bitbucket-to-elasticsearch | bunyan
 
 The `| bunyan` part is optional. It's to get nicer console logging (instead of the default json logger). To use bunyan install it first using `yarn global add bunyan`.
 
+## Using environment variables
+
+If you want to use environment variables, create a `config.js` file instead of `config.json`.
+
+```
+module.exports = {
+  "bitbucket": {
+    "username": process.env.MY_BITBUCKET_USERNAME,
+    "clientId": process.env.MY_BITBUCKET_CLIENT_ID,
+    "clientSecret": process.env.MY_BITBUCKET_CLIENT_SECRET
+  },
+  "elasticsearch": {
+    "host": process.env.MY_ES_HOST
+  }
+}
+```
+
 ## License
 MIT
 

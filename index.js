@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const path = require('path');
-const config = require(path.join(process.cwd(), 'config.json'));
+const config = require(path.join(process.cwd(), 'config'));
 const Sync = require('./src/sync');
 
 const startRepoSync = async() => {
