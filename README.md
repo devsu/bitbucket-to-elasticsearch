@@ -12,7 +12,13 @@ Requires node 10 or superior, because it uses async iterators.
 yarn global add bitbucket-to-elasticsearch
 ```
 
-Create a `config.json` file like:
+or
+
+```
+npm i -g bitbucket-to-elasticsearch
+```
+
+Then create a `config.json` file like:
 
 ```
 {
