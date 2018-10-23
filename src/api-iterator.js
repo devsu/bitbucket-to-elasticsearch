@@ -10,6 +10,7 @@ module.exports = class ApiIterator {
     this.httpClient = httpClient;
     this.nextUrl = url;
     this.options = options;
+    this.capReachedWarningPrinted = false;
   }
 
   async next() {
@@ -34,9 +35,17 @@ module.exports = class ApiIterator {
         this.currentState = { done, value };
         return resolve(this.currentState);
       });
-      log.info({'queue': this.queue.name}, 'Queued %s', this.nextUrl);
+      log.debug({'queue': this.queue.name}, 'Queued %s', this.nextUrl);
       log.debug({'queue': this.queue.name}, 'Size: %d', this.queue.size);
       log.debug({'queue': this.queue.name}, 'Pending: %d', this.queue.pending);
+      if (this.queue._intervalCount >= this.queue._intervalCap && !this.capReachedWarningPrinted) {
+        log.warn({'queue': this.queue.name}, 'Interval cap reached. To continue, I should wait until %s',
+          new Date(this.queue._intervalEnd));
+        this.capReachedWarningPrinted = true;
+      }
+      if (this.queue._intervalCount < this.queue._intervalCap) {
+        this.capReachedWarningPrinted = false;
+      }
     });
   }
 

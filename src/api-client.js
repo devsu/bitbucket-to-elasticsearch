@@ -9,7 +9,7 @@ const BITBUCKET_ACCESS_TOKEN_URI = 'https://bitbucket.org/site/oauth2/access_tok
 const BITBUCKET_AUTHORIZATION_URI = 'https://bitbucket.org/site/oauth2/authorize';
 const DEFAULT_PAGE_LEN = 100;
 const DEFAULT_TIMEOUT = 20000;
-const ONE_HOUR_IN_MILLIS = 60 * 60 * 1000;
+// const ONE_HOUR_IN_MILLIS = 60 * 60 * 1000;
 
 module.exports = class ApiClient {
   constructor(config) {
@@ -26,12 +26,13 @@ module.exports = class ApiClient {
     };
     this.axiosInstance = axios.create(axiosOptions);
     const limitedQueueOptions = {
-      'intervalCap': 800, // actual limit is 1000
-      'interval': ONE_HOUR_IN_MILLIS,
+      // 'intervalCap': 800, // actual limit is 1000
+      // 'interval': ONE_HOUR_IN_MILLIS,
+      'concurrency': 20,
     };
-    this.repositoriesQueue = Queue.getInstance('repositories', limitedQueueOptions);
-    this.commitsQueue = Queue.getInstance('commits', limitedQueueOptions);
-    this.statusesQueue = Queue.getInstance('statuses');
+    this.repositoriesQueue = Queue.getQueue('repositories', limitedQueueOptions);
+    this.commitsQueue = Queue.getQueue('commits', limitedQueueOptions);
+    this.statusesQueue = Queue.getQueue('statuses', limitedQueueOptions);
   }
 
   async authenticate() {
@@ -53,28 +54,24 @@ module.exports = class ApiClient {
     return await auth.credentials.getToken();
   }
 
-  getRepositoriesIterator(startDate) {
+  getRepositoriesIterator() {
     const url = new URL(`${BITBUCKET_BASE_API_URL}/repositories/${this.config.username}`);
-    url.searchParams.set('sort', '-updated_on');
-    if (startDate) {
-      url.searchParams.set('q', `updated_on > "${startDate.toISOString()}"`);
-    }
     return new ApiIterator(this.repositoriesQueue, this.axiosInstance, url.toString());
   }
 
-  getCommitsIterator(repoSlug, startDate) {
+  getCommitsIterator(repoSlug, minDate) {
     let options = null;
     if (!repoSlug) {
       throw new Error('repoSlug is required');
     }
-    if (startDate) {
+    if (minDate) {
       options = {
         'interceptorFn': (it) => {
           if (!it.currentState || !it.currentState.value || !it.currentState.value.values) {
             return;
           }
           const commits = it.currentState.value.values;
-          if (new Date(commits[commits.length - 1].date).getTime() >= startDate.getTime()) {
+          if (new Date(commits[commits.length - 1].date).getTime() < minDate.getTime()) {
             it.nextUrl = null;
           }
         }

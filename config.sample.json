@@ -1,0 +1,10 @@
+{
+  "bitbucket": {
+    "username": "my-username",
+    "clientId": "my-client-id",
+    "clientSecret": "my-client-secret"
+  },
+  "elasticsearch": {
+    "host": "127.0.0.1:9200"
+  }
+}

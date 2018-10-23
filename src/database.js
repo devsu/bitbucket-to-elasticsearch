@@ -48,15 +48,17 @@ class Database {
     });
   }
 
-  async getRepositoriesMaxDate() {
-    const response = await this.elastic.search({
-      'index': 'repositories',
-      'body': {'aggs': {'maxDate': {'max': {'field': 'updated_on'}}}},
-    });
-    if (!response.aggregations.maxDate.value_as_string) {
+  async getRepository(uuid) {
+    try {
+      const repositoryResponse = await this.elastic.get({
+        'index': 'repositories',
+        'type': 'repository',
+        'id': uuid,
+      });
+      return repositoryResponse._source;
+    } catch (e) {
       return null;
     }
-    return new Date(response.aggregations.maxDate.value_as_string);
   }
 
   static getBulkUpsertBody(index, type, id, data) {

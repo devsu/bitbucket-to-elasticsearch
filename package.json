@@ -6,6 +6,9 @@
   "repository": "https://github.com/devsu/bitbucket-to-elasticsearch",
   "author": "Cesar Salazar @ Devsu",
   "license": "MIT",
+  "bin": {
+    "bitbucket-to-elasticsearch": "./index.js"
+  },
   "scripts": {
     "test": "yarn run unit && yarn run integration",
     "unit": "jest -c jest.config.unit.js",
@@ -25,6 +28,7 @@
     "axios": "^0.18.0",
     "bunyan": "^1.8.12",
     "client-oauth2": "^4.2.1",
+    "commander": "^2.19.0",
     "elasticsearch": "^15.1.1",
     "p-queue": "^3.0.0"
   }

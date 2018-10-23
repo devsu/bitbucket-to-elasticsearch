@@ -3,7 +3,7 @@ const PQueue = require('p-queue');
 const queues = {};
 
 class Queue {
-  static getInstance(name, options) {
+  static getQueue(name, options) {
     if (!name) {
       throw new Error('name is required')
     }

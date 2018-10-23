@@ -70,6 +70,15 @@ describe('BitbucketSync', () => {
       const actual = BitbucketSync.transformCommit(bitbucketCommitData);
       expect(actual).toEqual(esCommitData);
     });
+
+    test('should not fail when no author.user', () => {
+      const bitbucketCommitDataCopy = Object.assign({}, bitbucketCommitData);
+      delete bitbucketCommitDataCopy.author.user;
+      const esCommitDataCopy = Object.assign({}, esCommitData);
+      delete esCommitDataCopy.author.user;
+      const actual = BitbucketSync.transformCommit(bitbucketCommitDataCopy);
+      expect(actual).toEqual(esCommitDataCopy);
+    });
   });
 
   describe('transformCommits()', () => {

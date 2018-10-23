@@ -1,5 +1,8 @@
 const BitbucketApiClient = require('./api-client');
 const Database = require('./database');
+const logger = require('./logger');
+const Queue = require('./queue');
+const log = logger.child({'class': 'Sync'});
 
 module.exports = class Sync {
   constructor(config) {
@@ -20,29 +23,58 @@ module.exports = class Sync {
   }
 
   async synchronizeRepositories() {
-    let startDate = await this.database.getRepositoriesMaxDate();
-    const reposIterator = this.bitbucket.getRepositoriesIterator(startDate);
-    const promises = [];
+    const reposIterator = this.bitbucket.getRepositoriesIterator();
+    let repositories = [];
+    log.info('Getting repositories');
     for await (const data of reposIterator) {
-      const repositories = data.values;
-      const slugs = Sync.obtainSlugs(repositories);
-      promises.push(this.database.saveRepositories(Sync.transformRepositories(repositories)));
-      promises.push(...slugs.map((slug) => this.synchronizeCommits(slug, startDate)));
+      repositories.push(...data.values);
     }
-    await Promise.all(promises);
+    log.info('Done getting repositories. %d repositories found.', repositories.length);
+    // Refactored without unit tests:
+    // do not store repos in bulk (process repos one by one)
+    // do not store the repos until all its commits have been processed
+    // consider updated_on value for updating only missing commits
+    // TODO: Unit tests needed!
+    repositories = Sync.transformRepositories(repositories);
+    const processRepositoryQueue = Queue.getQueue('processRepo', {'concurrency': 10});
+    for (let i = 0; i < repositories.length; i++) {
+      processRepositoryQueue.add(async() => {
+        await this.synchronizeRepository(repositories[i]);
+      });
+    }
+    await processRepositoryQueue.onIdle();
+    log.info('All work is done!', repositories.length);
   }
 
-  async synchronizeCommits(repoSlug, startDate) {
-    const commitsIterator = this.bitbucket.getCommitsIterator(repoSlug, startDate);
+  async synchronizeRepository(repo) {
+    log.info({'full_name': repo.full_name}, 'Start sync: %s', repo.full_name);
+    const repoInDatabase = await this.database.getRepository(repo.uuid);
+    let minDate = null;
+    if (repoInDatabase) {
+      minDate = new Date(repoInDatabase.updated_on);
+      log.info({'full_name': repo.full_name}, 'Updating only commits newer than %s', minDate);
+    }
+    // Save the repo only after all its commits have been processed.
+    // TODO: Unit tests needed
+    await this.synchronizeCommits(repo.slug, minDate);
+    await this.database.saveRepositories([repo]);
+    log.info({'full_name': repo.full_name}, 'Sync done: %s', repo.full_name);
+  }
+
+  async synchronizeCommits(repoSlug, minDate) {
+    const commitsIterator = this.bitbucket.getCommitsIterator(repoSlug, minDate);
     const promises = [];
     for await (const data of commitsIterator) {
-      const commits = data.values;
+      const commits = data.values.filter((commit) => {
+        // TODO: this filter does not have tests
+        return !minDate || (new Date(commit.date)).getTime() > minDate.getTime();
+      });
       if (!commits.length) {
         continue;
       }
       const nodes = commits.map((commit) => commit.hash);
-      promises.push(this.database.saveCommits(Sync.transformCommits(commits)));
       promises.push(...nodes.map((node) => this.synchronizeStatuses(repoSlug, node)));
+      promises.push(this.database.saveCommits(Sync.transformCommits(commits)));
     }
     await Promise.all(promises);
   }
@@ -76,8 +108,9 @@ module.exports = class Sync {
   static transformCommit(data) {
     const transformed = Object.assign({}, data);
     delete transformed.links;
-    delete transformed.author.user.account_id;
-    delete transformed.author.user.links;
+    if (transformed.author.user) {
+      delete transformed.author.user.links;
+    }
     delete transformed.repository.links;
     delete transformed.repository.type;
     delete transformed.summary;
