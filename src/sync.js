@@ -85,7 +85,12 @@ module.exports = class Sync {
       const commitsToUpdate = await this.database.getCommitAncestors(statuses[i].commit.hash, (commit) => {
         return !commit.firstSuccessfulBuildDate;
       });
-      await this.database.updateCommits(commitsToUpdate, {'firstSuccessfulBuildDate': statuses[i].updated_on});
+      const repoInDb = await this.database.getRepository(repoUuid);
+      const updateInfo = {'firstSuccessfulBuildDate': statuses[i].updated_on};
+      await this.database.updateCommits(commitsToUpdate, updateInfo);
+      if (!repoInDb.firstSuccessfulBuildDate) {
+        await this.database.updateRepositories([repoUuid], updateInfo);
+      }
     }
   }
 

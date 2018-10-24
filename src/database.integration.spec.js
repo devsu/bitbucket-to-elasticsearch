@@ -510,4 +510,38 @@ describe('Database integration tests', () => {
       });
     });
   });
+
+  describe('updateRepositories()', () => {
+    let data, a, b, c;
+
+    beforeEach(async() => {
+      a = Object.assign({}, repositoryData, {'uuid': 'a'});
+      b = Object.assign({}, repositoryData, {'uuid': 'b'});
+      c = Object.assign({}, repositoryData, {'uuid': 'c'});
+      data = [a, b, c];
+      await database.setup();
+      await elastic.indices.flush({'waitIfOngoing': true});
+      await database.saveRepositories(data);
+    });
+
+    test('should update the matching documents', async() => {
+      const updateInfo = {'message': 'changed'};
+      const expectedA = a;
+      const expectedB = Object.assign({}, b, updateInfo);
+      const expectedC = Object.assign({}, c, updateInfo);
+      await database.updateRepositories(['b', 'c'], updateInfo);
+      const actualA = await elastic.get({'index': 'repositories', 'type': 'repository', 'id': 'a'});
+      const actualB = await elastic.get({'index': 'repositories', 'type': 'repository', 'id': 'b'});
+      const actualC = await elastic.get({'index': 'repositories', 'type': 'repository', 'id': 'c'});
+      expect(actualA._source).toEqual(expectedA);
+      expect(actualB._source).toEqual(expectedB);
+      expect(actualC._source).toEqual(expectedC);
+    });
+
+    describe('when nothing to update', () => {
+      test('should not fail', async() => {
+        await database.updateRepositories([], {});
+      });
+    });
+  });
 });

@@ -2,8 +2,9 @@ jest.unmock('client-oauth2');
 const elasticsearch = require('elasticsearch');
 const BitbucketSync = require('./sync');
 const helper = require('../integration-tests/helper');
-const statusEs = require('../integration-tests/status-es');
+const statusData = require('../integration-tests/status-es');
 const repositoryData = require('../integration-tests/repository-es');
+const commitData = require('../integration-tests/commit-es');
 const Database = require('./database');
 const config = require('./config');
 
@@ -78,7 +79,7 @@ describe('BitbucketSync integration tests', () => {
       await bitbucketSync.synchronizeRepositories();
       await elastic.indices.refresh();
       const commit = await elastic.get({'index': 'commits', 'type': 'commit', 'id': '1febbaa7d468b127ad5a5c64c67b0cde2c41b264'});
-      expect(commit._source.firstSuccessfulBuildDate).toEqual(statusEs.updated_on);
+      expect(commit._source.firstSuccessfulBuildDate).toEqual(statusData.updated_on);
       const anotherCommit = await elastic.get({'index': 'commits', 'type': 'commit', 'id': '6de4deee89aafee431b9382af5fce0f2b744c603'});
       expect(anotherCommit._source.firstSuccessfulBuildDate).toBeUndefined();
     });
@@ -161,6 +162,74 @@ describe('BitbucketSync integration tests', () => {
         expect(actual.length).toBeGreaterThanOrEqual(1);
         const found = actual.find((repo) => repo.uuid === repositoryData.uuid);
         expect(found).toBeDefined();
+      });
+    });
+  });
+
+  describe('updateFirstSuccessfulBuildDate()', () => {
+    let oldIsoDate;
+
+    beforeEach(async() => {
+      oldIsoDate = new Date(2010,1,1).toISOString();
+      const a = Object.assign({}, commitData, {'hash': 'a', 'parents':['b']});
+      const b = Object.assign({}, commitData, {'hash': 'b', 'parents':['c', 'd']});
+      const c = Object.assign({}, commitData, {'hash': 'c', 'parents':['e']});
+      const d = Object.assign({}, commitData, {'hash': 'd', 'parents':['e'], 'firstSuccessfulBuildDate': oldIsoDate});
+      const e = Object.assign({}, commitData, {'hash': 'e', 'parents':['f'], 'firstSuccessfulBuildDate': oldIsoDate});
+      const f = Object.assign({}, commitData, {'hash': 'f', 'parents':[], 'firstSuccessfulBuildDate': oldIsoDate});
+      const g = Object.assign({}, commitData, {'hash': 'g', 'parents':['f']});
+      const status = Object.assign({}, statusData);
+      status.commit.hash = 'a';
+      await elastic.indices.flush({'waitIfOngoing': true});
+      await Promise.all([
+        database.saveCommits([a, b, c, d, e, f, g]),
+        database.saveStatuses([status]),
+        database.saveRepositories([repositoryData]),
+      ]);
+    });
+
+    test('should set firstSuccessfulBuildDate on corresponding commits, but not on other commits', async() => {
+      await bitbucketSync.updateFirstSuccessfulBuildDate(repositoryData.uuid);
+      await elastic.indices.refresh();
+      const commitA = await elastic.get({'index': 'commits', 'type': 'commit', 'id': 'a'});
+      const commitB = await elastic.get({'index': 'commits', 'type': 'commit', 'id': 'b'});
+      const commitC = await elastic.get({'index': 'commits', 'type': 'commit', 'id': 'c'});
+      const commitD = await elastic.get({'index': 'commits', 'type': 'commit', 'id': 'd'});
+      const commitE = await elastic.get({'index': 'commits', 'type': 'commit', 'id': 'e'});
+      const commitF = await elastic.get({'index': 'commits', 'type': 'commit', 'id': 'f'});
+      const commitG = await elastic.get({'index': 'commits', 'type': 'commit', 'id': 'g'});
+      expect(commitA._source.firstSuccessfulBuildDate).toEqual(statusData.updated_on);
+      expect(commitB._source.firstSuccessfulBuildDate).toEqual(statusData.updated_on);
+      expect(commitC._source.firstSuccessfulBuildDate).toEqual(statusData.updated_on);
+      expect(commitD._source.firstSuccessfulBuildDate).toEqual(oldIsoDate);
+      expect(commitE._source.firstSuccessfulBuildDate).toEqual(oldIsoDate);
+      expect(commitF._source.firstSuccessfulBuildDate).toEqual(oldIsoDate);
+      expect(commitG._source.firstSuccessfulBuildDate).toBeUndefined();
+    });
+
+    describe('firstSuccessfulBuildDate hasnt been previously set on repo', () => {
+      test('should set firstSuccessfulBuildDate on repo', async() => {
+        await bitbucketSync.updateFirstSuccessfulBuildDate(repositoryData.uuid);
+        await elastic.indices.refresh();
+        const repo = await elastic.get({'index': 'repositories', 'type': 'repository', 'id': repositoryData.uuid});
+        expect(repo._source.firstSuccessfulBuildDate).toEqual(statusData.updated_on);
+      });
+    });
+
+    describe('firstSuccessfulBuildDate already set on repo', () => {
+      let oldIsoDate;
+
+      beforeEach(async() => {
+        oldIsoDate = new Date(2001,1,1).toISOString();
+        const updatedRepo = Object.assign({}, repositoryData, {'firstSuccessfulBuildDate': oldIsoDate});
+        await database.saveRepositories([updatedRepo]);
+      });
+
+      test('should not change it', async() => {
+        await bitbucketSync.updateFirstSuccessfulBuildDate(repositoryData.uuid);
+        await elastic.indices.refresh();
+        const repo = await elastic.get({'index': 'repositories', 'type': 'repository', 'id': repositoryData.uuid});
+        expect(repo._source.firstSuccessfulBuildDate).toEqual(oldIsoDate);
       });
     });
   });

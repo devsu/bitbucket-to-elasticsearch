@@ -115,6 +115,16 @@ class Database {
     }
   }
 
+  async updateRepositories(uuids, properties) {
+    const body = Database._getBulkUpdateBody('repositories', 'repository', uuids, properties);
+    if (body.length) {
+      return await this.elastic.bulk({
+        'body': body,
+        'refresh': true,
+      });
+    }
+  }
+
   async getRepositories() {
     // TODO: Elasticsearch search limit is 10000, we should make this query scrollable!
     const response = await this.elastic.search({
