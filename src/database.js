@@ -1,4 +1,6 @@
 const elasticsearch = require('elasticsearch');
+const logger = require('./logger');
+const log = logger.child({'class': 'Database'});
 
 class Database {
   constructor(config) {
@@ -113,13 +115,30 @@ class Database {
     }
   }
 
+  async getRepositories() {
+    // TODO: Elasticsearch search limit is 10000, we should make this query scrollable!
+    const response = await this.elastic.search({
+      'index': 'repositories',
+      'type': 'repository',
+      'size': 10000,
+    });
+    if (response.hits.total >= 9999) {
+      log.warn('getRepositories data probably missing! Scroll needs to be implemented!');
+    }
+    return response.hits.hits.map((s) => s._source);
+  }
+
   async getBuildStatuses(repoUuid) {
+    // TODO: Elasticsearch search limit is 10000, we should make this query scrollable!
     const response = await this.elastic.search({
       'index': 'statuses',
       'type': 'status',
       'q': `repository.uuid:"${repoUuid}"`,
-      'size': -1,
+      'size': 10000,
     });
+    if (response.hits.total >= 9999) {
+      log.warn('getBuildStatuses data probably missing! Scroll needs to be implemented!');
+    }
     return response.hits.hits.map((s) => s._source);
   }
 

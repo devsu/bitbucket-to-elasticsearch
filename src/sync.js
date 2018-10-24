@@ -24,19 +24,12 @@ module.exports = class Sync {
   }
 
   async synchronizeRepositories() {
-    const reposIterator = this.bitbucket.getRepositoriesIterator();
-    let repositories = [];
-    log.info('Getting repositories');
-    for await (const data of reposIterator) {
-      repositories.push(...data.values);
-    }
-    log.info('Done getting repositories. %d repositories found.', repositories.length);
+    const repositories = Sync.transformRepositories(await this.getOutdatedRepositories());
     // Refactored without unit tests:
     // do not store repos in bulk (process repos one by one)
     // do not store the repos until all its commits have been processed
     // consider updated_on value for updating only missing commits
     // TODO: Unit tests needed!
-    repositories = Sync.transformRepositories(repositories);
     const processRepositoryQueue = Queue.getQueue('processRepo', {'concurrency': 5});
     for (let i = 0; i < repositories.length; i++) {
       processRepositoryQueue.add(async() => {
@@ -48,7 +41,7 @@ module.exports = class Sync {
   }
 
   async synchronizeRepository(repo) {
-    log.info({'full_name': repo.full_name}, 'Start sync: %s', repo.full_name);
+    log.info({'full_name': repo.full_name}, 'Start: %s', repo.full_name);
     const repoInDatabase = await this.database.getRepository(repo.uuid);
     let minDate = null;
     if (repoInDatabase) {
@@ -63,7 +56,7 @@ module.exports = class Sync {
     // TODO: Unit tests needed
     await this.database.saveRepositories([repo]);
     await this.updateFirstSuccessfulBuildDate(repo.uuid);
-    log.info({'full_name': repo.full_name}, 'Sync done: %s', repo.full_name);
+    log.info({'full_name': repo.full_name}, 'Done: %s', repo.full_name);
   }
 
   async synchronizeCommits(repoSlug, minDate) {
@@ -120,6 +113,22 @@ module.exports = class Sync {
       promises.push(this.database.saveRefs(Sync.transformRefs(refs)));
     }
     await Promise.all(promises);
+  }
+
+  async getOutdatedRepositories() {
+    const reposIterator = this.bitbucket.getRepositoriesIterator();
+    let repositoriesInBitbucket = [];
+    log.info('Getting repositories');
+    for await (const data of reposIterator) {
+      repositoriesInBitbucket.push(...data.values);
+    }
+    const repositoriesInDb = await this.database.getRepositories();
+    const outdatedRepos = repositoriesInBitbucket.filter((repoInBitbucket) => {
+      const repoInDb = repositoriesInDb.find((r) => r.uuid === repoInBitbucket.uuid);
+      return !repoInDb || (new Date(repoInBitbucket.updated_on).getTime() > new Date(repoInDb.updated_on).getTime());
+    });
+    log.info('%d repositories found, %d are outdated', repositoriesInBitbucket.length, outdatedRepos.length);
+    return outdatedRepos;
   }
 
   static transformRepository(data) {

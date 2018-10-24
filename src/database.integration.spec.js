@@ -435,6 +435,26 @@ describe('Database integration tests', () => {
     });
   });
 
+  describe('getRepositories()', () => {
+    let data, a, b;
+
+    beforeEach(async() => {
+      a = Object.assign({}, repositoryData, {'uuid': '{a}'});
+      b = Object.assign({}, repositoryData, {'uuid': '{b}'});
+      data = [a, b];
+      await database.setup();
+      await elastic.indices.flush({'waitIfOngoing': true});
+      await database.saveRepositories(data);
+    });
+
+    test('should return all the repositories', async() => {
+      const expectedData = expect.arrayContaining([a, b]);
+      const response = await database.getRepositories();
+      expect(response.length).toEqual(2);
+      expect(response).toEqual(expectedData);
+    });
+  });
+
   describe('getBuildStatuses()', () => {
     let data, a, b, c, d;
 

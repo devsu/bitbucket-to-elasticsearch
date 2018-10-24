@@ -3,9 +3,11 @@ const elasticsearch = require('elasticsearch');
 const BitbucketSync = require('./sync');
 const helper = require('../integration-tests/helper');
 const statusEs = require('../integration-tests/status-es');
+const repositoryData = require('../integration-tests/repository-es');
+const Database = require('./database');
 
 describe('BitbucketSync integration tests', () => {
-  let elastic, elasticConfig, bitbucketSync, config;
+  let elastic, database, elasticConfig, bitbucketSync, config;
 
   beforeAll(async() => {
     jest.setTimeout(20000);
@@ -25,6 +27,7 @@ describe('BitbucketSync integration tests', () => {
       'elasticsearch': elasticConfig,
     };
     bitbucketSync = new BitbucketSync(config);
+    database = new Database(elasticConfig);
     await elastic.indices.delete({'index': '_all'});
     await elastic.indices.flush({'waitIfOngoing': true});
     await elastic.indices.create({'index': 'repositories'});
@@ -120,6 +123,48 @@ describe('BitbucketSync integration tests', () => {
       await elastic.indices.refresh();
       const {count} = await elastic.count({'index': 'refs'});
       expect(count).toBeGreaterThan(0);
+    });
+  });
+
+  describe('getOutdatedRepositories()', () => {
+    describe('when the repo exists but its outdated', () => {
+      beforeEach(async() => {
+        const outdatedDate = new Date(2001, 1, 1).toISOString();
+        const repo = Object.assign({}, repositoryData, {'updated_on': outdatedDate});
+        await elastic.indices.flush({'waitIfOngoing': true});
+        await database.saveRepositories([repo]);
+      });
+
+      test('should return the repo', async() => {
+        const actual = await bitbucketSync.getOutdatedRepositories();
+        expect(actual.length).toBeGreaterThanOrEqual(1);
+        const found = actual.find((repo) => repo.uuid === repositoryData.uuid);
+        expect(found).toBeDefined();
+      });
+    });
+
+    describe('when the repo exists but its updated', () => {
+      beforeEach(async() => {
+        const nowAsIsoTime = new Date().toISOString();
+        const repo = Object.assign({}, repositoryData, {'updated_on': nowAsIsoTime});
+        await elastic.indices.flush({'waitIfOngoing': true});
+        await database.saveRepositories([repo]);
+      });
+
+      test('should not return the repo', async() => {
+        const actual = await bitbucketSync.getOutdatedRepositories();
+        const found = actual.find((repo) => repo.uuid === repositoryData.uuid);
+        expect(found).toBeUndefined();
+      });
+    });
+
+    describe('when the repo does not exists', () => {
+      test('should return the repo', async() => {
+        const actual = await bitbucketSync.getOutdatedRepositories();
+        expect(actual.length).toBeGreaterThanOrEqual(1);
+        const found = actual.find((repo) => repo.uuid === repositoryData.uuid);
+        expect(found).toBeDefined();
+      });
     });
   });
 });
