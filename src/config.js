@@ -18,7 +18,7 @@ module.exports = Object.assign({
     'defaultTimeout': process.env.BB2ES_BITBUCKET_DEFAULT_TIMEOUT || 10000,
     'queueOptions': {
       'processRepo': {
-        'concurrency': process.env.BB2ES_BITBUCKET_QUEUES_PROCESS_REPO_CONCURRENCY || 3,
+        'concurrency': process.env.BB2ES_BITBUCKET_QUEUES_PROCESS_REPO_CONCURRENCY || 2,
       },
       'commits': {
         // From the documentation, the limit for this endpoint is 1000 / hour.
@@ -42,7 +42,7 @@ module.exports = Object.assign({
     }
   },
   'elasticsearch': {
-    'host': process.env.BB2ES_BITBUCKET_CLIENT_SECRET || '127.0.0.1:9200',
+    'host': process.env.BB2ES_ELASTICSEARCH_HOST || '127.0.0.1:9200',
   },
   'analytics': {
     // we assume that the tags that match this pattern were deployed (used to calculate firstSuccessfulDeploymentDate)

@@ -31,7 +31,7 @@ module.exports = class Sync {
     // do not store the repos until all its commits have been processed
     // consider updated_on value for updating only missing commits
     // TODO: Unit tests needed!
-    const processRepositoryQueue = Queue.getQueue('processRepo', {'concurrency': 5});
+    const processRepositoryQueue = Queue.getQueue('processRepo', this.config.bitbucket.queueOptions.processRepo);
     for (let i = 0; i < repositories.length; i++) {
       processRepositoryQueue.add(async() => {
         await this.synchronizeRepository(repositories[i]);
@@ -42,6 +42,7 @@ module.exports = class Sync {
   }
 
   async synchronizeRepository(repo) {
+    const startTime = new Date().getTime();
     log.info({'full_name': repo.full_name}, 'Start: %s', repo.full_name);
     const repoInDatabase = await this.database.getRepository(repo.uuid);
     let minDate = null;
@@ -57,7 +58,13 @@ module.exports = class Sync {
     // TODO: Unit tests needed
     await this.database.saveRepositories([repo]);
     await this.updateFirstSuccessfulBuildDate(repo.uuid);
-    log.info({'full_name': repo.full_name}, 'Done: %s', repo.full_name);
+    const endTime = new Date().getTime();
+    log.info(
+      {'full_name': repo.full_name},
+      'Done: %s. It took %d seconds.',
+      repo.full_name,
+      (endTime - startTime) / 1000
+    );
   }
 
   async synchronizeCommits(repoSlug, minDate) {
