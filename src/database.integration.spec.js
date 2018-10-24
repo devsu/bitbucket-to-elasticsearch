@@ -4,6 +4,7 @@ const Database = require('./database');
 const repositoryData = require('../integration-tests/repository-es');
 const commitData = require('../integration-tests/commit-es');
 const statusData = require('../integration-tests/status-es');
+const refData = require('../integration-tests/ref-es');
 
 describe('Database integration tests', () => {
   let database, elastic, elasticConfig;
@@ -33,9 +34,11 @@ describe('Database integration tests', () => {
         const existsRepositories = await elastic.indices.exists({'index': 'repositories'});
         const existsCommits = await elastic.indices.exists({'index': 'commits'});
         const existsStatuses = await elastic.indices.exists({'index': 'statuses'});
+        const existsRefs = await elastic.indices.exists({'index': 'refs'});
         expect(existsRepositories).toEqual(true);
         expect(existsCommits).toEqual(true);
         expect(existsStatuses).toEqual(true);
+        expect(existsRefs).toEqual(true);
       });
     });
 
@@ -66,6 +69,18 @@ describe('Database integration tests', () => {
     describe('when statuses index already exists', () => {
       beforeEach(async() => {
         await elastic.indices.create({'index': 'statuses'});
+        await elastic.indices.flush({'waitIfOngoing': true});
+      });
+
+      test('should not fail', async() => {
+        await database.setup();
+        await elastic.indices.flush({'waitIfOngoing': true});
+      });
+    });
+
+    describe('when refs index already exists', () => {
+      beforeEach(async() => {
+        await elastic.indices.create({'index': 'refs'});
         await elastic.indices.flush({'waitIfOngoing': true});
       });
 
@@ -250,6 +265,66 @@ describe('Database integration tests', () => {
         }));
         await database.saveStatuses(data);
         const response = await elastic.search({'index': 'statuses', 'type': 'status'});
+        expect(response.hits.total).toEqual(2);
+        expect(response.hits.hits).toEqual(expectedData);
+      });
+    });
+  });
+
+  describe('saveRefs()', () => {
+    let data;
+
+    beforeEach(async() => {
+      const first = Object.assign({}, refData, {'id': 'devsu/repo1#master'});
+      const second = Object.assign({}, refData, {'id': 'devsu/repo1#v1.0'});
+      data = [first, second];
+      await database.setup();
+      await elastic.indices.flush({'waitIfOngoing': true});
+    });
+
+    describe('when no data passed', () => {
+      test('should fail', async() => {
+        try {
+          await database.saveRefs();
+          fail('should fail');
+        } catch (e) {
+          expect(e.message).toEqual('data is required');
+        }
+      });
+    });
+
+    describe('when a document does not exist in the DB', () => {
+      test('should insert the document', async() => {
+        const expectedData = expect.arrayContaining(data.map((dataItem) => {
+          return expect.objectContaining({
+            '_id': dataItem.id,
+            '_source': dataItem,
+          });
+        }));
+        await database.saveRefs(data);
+        const response = await elastic.search({'index': 'refs', 'type': 'ref'});
+        expect(response.hits.total).toEqual(2);
+        expect(response.hits.hits).toEqual(expectedData);
+      });
+    });
+
+    describe('when a document already exists in the DB', () => {
+      beforeEach(async() => {
+        await database.saveRefs(data);
+      });
+
+      test('should update the document', async() => {
+        data.forEach((dataItem) => {
+          dataItem.description = 'changed by c3s4r';
+        });
+        const expectedData = expect.arrayContaining(data.map((dataItem) => {
+          return expect.objectContaining({
+            '_id': dataItem.id,
+            '_source': dataItem,
+          });
+        }));
+        await database.saveRefs(data);
+        const response = await elastic.search({'index': 'refs', 'type': 'ref'});
         expect(response.hits.total).toEqual(2);
         expect(response.hits.hits).toEqual(expectedData);
       });

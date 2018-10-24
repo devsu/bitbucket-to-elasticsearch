@@ -63,27 +63,24 @@ describe('BitbucketSync integration tests', () => {
   });
 
   describe('synchronizeRepositories()', () => {
-    test('should import repositories and commits', async() => {
+    test('should import repositories, commits and refs', async() => {
       await bitbucketSync.synchronizeRepositories();
       await elastic.indices.refresh();
       const result1 = await elastic.count({'index': 'repositories'});
       const result2 = await elastic.count({'index': 'commits'});
+      const result3 = await elastic.count({'index': 'refs'});
       expect(result1.count).toBeGreaterThan(0);
       expect(result2.count).toBeGreaterThan(0);
+      expect(result3.count).toBeGreaterThan(0);
     });
 
-    test('should set firstSuccessfulBuildDate on corresponding commits', async() => {
+    test('should set firstSuccessfulBuildDate on corresponding commits, but not on other commits', async() => {
       await bitbucketSync.synchronizeRepositories();
       await elastic.indices.refresh();
       const commit = await elastic.get({'index': 'commits', 'type': 'commit', 'id': '1febbaa7d468b127ad5a5c64c67b0cde2c41b264'});
       expect(commit._source.firstSuccessfulBuildDate).toEqual(statusEs.updated_on);
-    });
-
-    test('should not set firstSuccessfulBuildDate on other commits', async() => {
-      await bitbucketSync.synchronizeRepositories();
-      await elastic.indices.refresh();
-      const commit = await elastic.get({'index': 'commits', 'type': 'commit', 'id': '6de4deee89aafee431b9382af5fce0f2b744c603'});
-      expect(commit._source.firstSuccessfulBuildDate).toBeUndefined();
+      const anotherCommit = await elastic.get({'index': 'commits', 'type': 'commit', 'id': '6de4deee89aafee431b9382af5fce0f2b744c603'});
+      expect(anotherCommit._source.firstSuccessfulBuildDate).toBeUndefined();
     });
   });
 
@@ -112,6 +109,16 @@ describe('BitbucketSync integration tests', () => {
       await bitbucketSync.synchronizeStatuses(repoSlug, node);
       await elastic.indices.refresh();
       const {count} = await elastic.count({'index': 'statuses'});
+      expect(count).toBeGreaterThan(0);
+    });
+  });
+
+  describe('synchronizeRefs()', () => {
+    test('should import refs', async() => {
+      const repoSlug = 'eslint-plugin-devsu';
+      await bitbucketSync.synchronizeRefs(repoSlug);
+      await elastic.indices.refresh();
+      const {count} = await elastic.count({'index': 'refs'});
       expect(count).toBeGreaterThan(0);
     });
   });

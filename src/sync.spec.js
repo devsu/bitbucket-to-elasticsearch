@@ -5,6 +5,8 @@ const bitbucketCommitData = require('../integration-tests/commit-bitbucket');
 const esCommitData = require('../integration-tests/commit-es');
 const bitbucketStatusData = require('../integration-tests/status-bitbucket');
 const esStatusData = require('../integration-tests/status-es');
+const bitbucketRefData = require('../integration-tests/ref-bitbucket');
+const esRefData = require('../integration-tests/ref-es');
 
 describe('BitbucketSync', () => {
   let bitbucketSync, config;
@@ -99,6 +101,20 @@ describe('BitbucketSync', () => {
     test('should transform bitbucket data to elastic search data', () => {
       const actual = BitbucketSync.transformStatuses([bitbucketStatusData, bitbucketStatusData]);
       expect(actual).toEqual([esStatusData, esStatusData]);
+    });
+  });
+
+  describe('transformRef()', () => {
+    test('should transform bitbucket data to elastic search data', () => {
+      const actual = BitbucketSync.transformRef(bitbucketRefData);
+      expect(actual).toEqual(esRefData);
+    });
+  });
+
+  describe('transformRefs()', () => {
+    test('should transform bitbucket data to elastic search data', () => {
+      const actual = BitbucketSync.transformRefs([bitbucketRefData, bitbucketRefData]);
+      expect(actual).toEqual([esRefData, esRefData]);
     });
   });
 

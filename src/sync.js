@@ -55,9 +55,12 @@ module.exports = class Sync {
       minDate = new Date(repoInDatabase.updated_on);
       log.info({'full_name': repo.full_name}, 'Updating only commits newer than %s', minDate);
     }
-    // Save the repo only after all its commits have been processed.
+    await Promise.all([
+      this.synchronizeCommits(repo.slug, minDate),
+      this.synchronizeRefs(repo.slug),
+    ]);
+    // Save the repo only after all its commits and refs have been processed.
     // TODO: Unit tests needed
-    await this.synchronizeCommits(repo.slug, minDate);
     await this.database.saveRepositories([repo]);
     await this.updateFirstSuccessfulBuildDate(repo.uuid);
     log.info({'full_name': repo.full_name}, 'Sync done: %s', repo.full_name);
@@ -106,6 +109,19 @@ module.exports = class Sync {
     await Promise.all(promises);
   }
 
+  async synchronizeRefs(repoSlug) {
+    const refsIterator = this.bitbucket.getRefsIterator(repoSlug);
+    const promises = [];
+    for await (const data of refsIterator) {
+      const refs = data.values;
+      if (!refs.length) {
+        continue;
+      }
+      promises.push(this.database.saveRefs(Sync.transformRefs(refs)));
+    }
+    await Promise.all(promises);
+  }
+
   static transformRepository(data) {
     const transformed = Object.assign({}, data);
     delete transformed.links;
@@ -147,6 +163,20 @@ module.exports = class Sync {
 
   static transformStatuses(data) {
     return data.map(Sync.transformStatus);
+  }
+
+  static transformRef(data) {
+    const transformed = Object.assign({}, data);
+    transformed.id = `${transformed.target.repository.full_name}#${transformed.name}`;
+    delete transformed.links;
+    delete transformed.default_merge_strategy;
+    delete transformed.merge_strategies;
+    transformed.target = transformed.target.hash;
+    return transformed;
+  }
+
+  static transformRefs(data) {
+    return data.map(Sync.transformRef);
   }
 
   static obtainSlugs(data) {

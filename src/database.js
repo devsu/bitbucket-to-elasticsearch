@@ -10,6 +10,7 @@ class Database {
     const repositoriesIndexExists = await this.elastic.indices.exists({'index': 'repositories'});
     const commitsIndexExists = await this.elastic.indices.exists({'index': 'commits'});
     const statusesIndexExists = await this.elastic.indices.exists({'index': 'statuses'});
+    const refsIndexExists = await this.elastic.indices.exists({'index': 'refs'});
     if (!repositoriesIndexExists) {
       await this.elastic.indices.create({'index': 'repositories'});
     }
@@ -18,6 +19,9 @@ class Database {
     }
     if (!statusesIndexExists) {
       await this.elastic.indices.create({'index': 'statuses'});
+    }
+    if (!refsIndexExists) {
+      await this.elastic.indices.create({'index': 'refs'});
     }
   }
 
@@ -47,6 +51,16 @@ class Database {
     }
     return await this.elastic.bulk({
       'body': Database._getBulkUpsertBody('statuses', 'status', 'id', data),
+      'refresh': true,
+    });
+  }
+
+  async saveRefs(data) {
+    if (!data) {
+      throw new Error('data is required');
+    }
+    return await this.elastic.bulk({
+      'body': Database._getBulkUpsertBody('refs', 'ref', 'id', data),
       'refresh': true,
     });
   }

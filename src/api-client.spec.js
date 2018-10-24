@@ -124,4 +124,30 @@ describe('BitbucketApiClient', () => {
         `https://api.bitbucket.org/2.0/repositories/${config.username}/${repoSlug}/commit/${node}/statuses`);
     });
   });
+
+  describe('getRefsIterator()', () => {
+    let repoSlug, iterator;
+
+    beforeEach(() => {
+      repoSlug = 'my-repo-slug';
+    });
+
+    describe('when missing required arguments', () => {
+      test('should throw error', () => {
+        try {
+          iterator = api.getRefsIterator();
+          fail('should fail');
+        } catch (e) {
+          expect(e.message).toEqual('repoSlug is required');
+        }
+      });
+    });
+
+    test('should return an iterator pointing to the corresponding url', () => {
+      const iterator = api.getRefsIterator(repoSlug);
+      expect(iterator).toBeInstanceOf(BitbucketApiIterator);
+      expect(iterator.nextUrl).toEqual(
+        `https://api.bitbucket.org/2.0/repositories/${config.username}/${repoSlug}/refs`);
+    });
+  });
 });

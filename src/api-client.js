@@ -33,6 +33,7 @@ module.exports = class ApiClient {
     this.repositoriesQueue = Queue.getQueue('repositories', limitedQueueOptions);
     this.commitsQueue = Queue.getQueue('commits', limitedQueueOptions);
     this.statusesQueue = Queue.getQueue('statuses', limitedQueueOptions);
+    this.refsQueue = Queue.getQueue('refs', limitedQueueOptions);
   }
 
   async authenticate() {
@@ -88,5 +89,13 @@ module.exports = class ApiClient {
     }
     const url = `${BITBUCKET_BASE_API_URL}/repositories/${this.config.username}/${repoSlug}/commit/${node}/statuses`;
     return new ApiIterator(this.statusesQueue, this.axiosInstance, url.toString());
+  }
+
+  getRefsIterator(repoSlug) {
+    if (!repoSlug) {
+      throw new Error('repoSlug is required');
+    }
+    const url = `${BITBUCKET_BASE_API_URL}/repositories/${this.config.username}/${repoSlug}/refs`;
+    return new ApiIterator(this.refsQueue, this.axiosInstance, url.toString());
   }
 };
