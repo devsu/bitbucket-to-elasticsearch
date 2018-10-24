@@ -57,7 +57,10 @@ module.exports = class Sync {
     // Save the repo only after all its commits and refs have been processed.
     // TODO: Unit tests needed
     await this.database.saveRepositories([repo]);
-    await this.updateFirstSuccessfulBuildDate(repo.uuid);
+    await Promise.all([
+      this.updateFirstSuccessfulBuildDate(repo.uuid),
+      this.updateFirstSuccessfulDeploymentDate(repo.uuid),
+    ]);
     const endTime = new Date().getTime();
     log.info(
       {'full_name': repo.full_name},

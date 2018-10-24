@@ -90,7 +90,13 @@ class Database {
       const response = await this.elastic.get({index, type, id});
       return response._source;
     } catch (e) {
-      return null;
+      if (e.status === 404) {
+        // not found, return null
+        return null;
+      }
+      // another error, log and rethrow
+      log.error(e);
+      throw e;
     }
   }
 

@@ -78,13 +78,20 @@ describe('BitbucketSync integration tests', () => {
       expect(result3.count).toBeGreaterThan(0);
     });
 
-    test('should set firstSuccessfulBuildDate on corresponding commits, but not on other commits', async() => {
+    test('should set firstSuccessfulBuildDate on corresponding commits', async() => {
       await bitbucketSync.synchronizeRepositories();
       await elastic.indices.refresh();
       const commit = await elastic.get({'index': 'commits', 'type': 'commit', 'id': '1febbaa7d468b127ad5a5c64c67b0cde2c41b264'});
       expect(commit._source.firstSuccessfulBuildDate).toEqual(statusData.updated_on);
       const anotherCommit = await elastic.get({'index': 'commits', 'type': 'commit', 'id': '6de4deee89aafee431b9382af5fce0f2b744c603'});
       expect(anotherCommit._source.firstSuccessfulBuildDate).toBeUndefined();
+    });
+
+    test('should set firstSuccessfulDeploymentDate on corresponding commits', async() => {
+      await bitbucketSync.synchronizeRepositories();
+      await elastic.indices.refresh();
+      const commit = await elastic.get({'index': 'commits', 'type': 'commit', 'id': '6de4deee89aafee431b9382af5fce0f2b744c603'});
+      expect(commit._source.firstSuccessfulDeploymentDate).toEqual(refTagData.date);
     });
   });
 
