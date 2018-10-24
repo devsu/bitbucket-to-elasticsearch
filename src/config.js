@@ -48,6 +48,6 @@ module.exports = Object.assign({
   },
   'analytics': {
     // we assume that the tags that match this pattern were deployed (used to calculate firstSuccessfulDeploymentDate)
-    'deploymentTagsPattern': env.BB2ES_ANALYTICS_DEPLOYMENT_TAGS_PATTERN || 'v.+',
+    'deploymentTagsPattern': env.BB2ES_ANALYTICS_DEPLOYMENT_TAGS_PATTERN || '.+',
   },
 }, configJson);
