@@ -2,6 +2,7 @@ jest.unmock('client-oauth2');
 const elasticsearch = require('elasticsearch');
 const BitbucketSync = require('./sync');
 const helper = require('../integration-tests/helper');
+const statusEs = require('../integration-tests/status-es');
 
 describe('BitbucketSync integration tests', () => {
   let elastic, elasticConfig, bitbucketSync, config;
@@ -28,6 +29,7 @@ describe('BitbucketSync integration tests', () => {
     await elastic.indices.flush({'waitIfOngoing': true});
     await elastic.indices.create({'index': 'repositories'});
     await elastic.indices.create({'index': 'commits'});
+    await elastic.indices.create({'index': 'statuses'});
     await elastic.indices.flush({'waitIfOngoing': true});
   });
 
@@ -61,18 +63,27 @@ describe('BitbucketSync integration tests', () => {
   });
 
   describe('synchronizeRepositories()', () => {
-    test('should import repositories', async() => {
+    test('should import repositories and commits', async() => {
       await bitbucketSync.synchronizeRepositories();
       await elastic.indices.refresh();
-      const {count} = await elastic.count({'index': 'repositories'});
-      expect(count).toBeGreaterThan(0);
+      const result1 = await elastic.count({'index': 'repositories'});
+      const result2 = await elastic.count({'index': 'commits'});
+      expect(result1.count).toBeGreaterThan(0);
+      expect(result2.count).toBeGreaterThan(0);
     });
 
-    test('should import commits', async() => {
+    test('should set firstSuccessfulBuildDate on corresponding commits', async() => {
       await bitbucketSync.synchronizeRepositories();
       await elastic.indices.refresh();
-      const {count} = await elastic.count({'index': 'commits'});
-      expect(count).toBeGreaterThan(0);
+      const commit = await elastic.get({'index': 'commits', 'type': 'commit', 'id': '1febbaa7d468b127ad5a5c64c67b0cde2c41b264'});
+      expect(commit._source.firstSuccessfulBuildDate).toEqual(statusEs.updated_on);
+    });
+
+    test('should not set firstSuccessfulBuildDate on other commits', async() => {
+      await bitbucketSync.synchronizeRepositories();
+      await elastic.indices.refresh();
+      const commit = await elastic.get({'index': 'commits', 'type': 'commit', 'id': '6de4deee89aafee431b9382af5fce0f2b744c603'});
+      expect(commit._source.firstSuccessfulBuildDate).toBeUndefined();
     });
   });
 
@@ -86,7 +97,8 @@ describe('BitbucketSync integration tests', () => {
     });
 
     test('should import statuses', async() => {
-      await bitbucketSync.synchronizeRepositories();
+      const repoSlug = 'eslint-plugin-devsu';
+      await bitbucketSync.synchronizeCommits(repoSlug);
       await elastic.indices.refresh();
       const {count} = await elastic.count({'index': 'statuses'});
       expect(count).toBeGreaterThan(0);

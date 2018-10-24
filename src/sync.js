@@ -1,3 +1,4 @@
+const _ = require('lodash');
 const BitbucketApiClient = require('./api-client');
 const Database = require('./database');
 const logger = require('./logger');
@@ -58,6 +59,7 @@ module.exports = class Sync {
     // TODO: Unit tests needed
     await this.synchronizeCommits(repo.slug, minDate);
     await this.database.saveRepositories([repo]);
+    await this.updateFirstSuccessfulBuildDate(repo.uuid);
     log.info({'full_name': repo.full_name}, 'Sync done: %s', repo.full_name);
   }
 
@@ -77,6 +79,18 @@ module.exports = class Sync {
       promises.push(this.database.saveCommits(Sync.transformCommits(commits)));
     }
     await Promise.all(promises);
+  }
+
+  async updateFirstSuccessfulBuildDate(repoUuid) {
+    let statuses = await this.database.getBuildStatuses(repoUuid);
+    statuses = statuses.filter((s) => s.state === 'SUCCESSFUL');
+    statuses = _.orderBy(statuses, ['updated_on'], ['asc']);
+    for (let i = 0; i < statuses.length; i++) {
+      const commitsToUpdate = await this.database.getCommitAncestors(statuses[i].commit.hash, (commit) => {
+        return !commit.firstSuccessfulBuildDate;
+      });
+      await this.database.updateCommits(commitsToUpdate, {'firstSuccessfulBuildDate': statuses[i].updated_on});
+    }
   }
 
   async synchronizeStatuses(repoSlug, node) {
