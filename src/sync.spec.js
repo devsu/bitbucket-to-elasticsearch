@@ -1,4 +1,5 @@
 const BitbucketSync = require('./sync');
+const config = require('./config');
 const bitbucketRepositoryData = require('../integration-tests/repository-bitbucket');
 const esRepositoryData = require('../integration-tests/repository-es');
 const bitbucketCommitData = require('../integration-tests/commit-bitbucket');
@@ -9,17 +10,12 @@ const bitbucketRefData = require('../integration-tests/ref-bitbucket');
 const esRefData = require('../integration-tests/ref-es');
 
 describe('BitbucketSync', () => {
-  let bitbucketSync, config;
+  let bitbucketSync, customConfig;
 
   beforeEach(() => {
-    config = {
-      'bitbucket': {
-        'username': 'devsu',
-      },
-      'elasticsearch': {
-      },
-    };
-    bitbucketSync = new BitbucketSync(config);
+    customConfig = Object.assign({}, config);
+    customConfig.bitbucket.username = 'devsu';
+    bitbucketSync = new BitbucketSync(customConfig);
   });
 
   describe('constructor', () => {
@@ -33,9 +29,9 @@ describe('BitbucketSync', () => {
     });
 
     test('should fail when no config.bitbucket', () => {
-      delete config.bitbucket;
+      delete customConfig.bitbucket;
       try {
-        bitbucketSync = new BitbucketSync(config);
+        bitbucketSync = new BitbucketSync(customConfig);
         fail('should fail');
       } catch (error) {
         expect(error.message).toMatch(/.+ required/);
@@ -43,9 +39,9 @@ describe('BitbucketSync', () => {
     });
 
     test('should fail when no config.elasticsearch', () => {
-      delete config.elasticsearch;
+      delete customConfig.elasticsearch;
       try {
-        bitbucketSync = new BitbucketSync(config);
+        bitbucketSync = new BitbucketSync(customConfig);
         fail('should fail');
       } catch (error) {
         expect(error.message).toMatch(/.+ required/);

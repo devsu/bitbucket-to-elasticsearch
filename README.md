@@ -8,6 +8,8 @@ Requires node 10 or superior, because it uses async iterators.
 
 ## Installation and Usage
 
+### Installation
+
 ```
 yarn global add bitbucket-to-elasticsearch
 ```
@@ -18,7 +20,9 @@ or
 npm i -g bitbucket-to-elasticsearch
 ```
 
-Then create a `config.json` file like:
+To configure, you can create a `config.json` file or use environment variables.
+
+### Configure using JSON file
 
 ```
 {
@@ -33,6 +37,17 @@ Then create a `config.json` file like:
 }
 ```
 
+### Or Configure using environment variables
+
+- `BB2ES_BITBUCKET_USERNAME`
+- `BB2ES_BITBUCKET_CLIENT_ID`
+- `BB2ES_BITBUCKET_CLIENT_SECRET`
+- `BB2ES_BITBUCKET_CLIENT_SECRET`
+
+To get the full list of environment variables that can be set check `src/config.js`.
+
+### Run
+
 Then just run:
 
 ```
@@ -40,23 +55,6 @@ bitbucket-to-elasticsearch | bunyan
 ```
 
 The `| bunyan` part is optional. It's to get nicer console logging (instead of the default json logger). To use bunyan install it first using `yarn global add bunyan`.
-
-## Using environment variables
-
-If you want to use environment variables, create a `config.js` file instead of `config.json`.
-
-```
-module.exports = {
-  "bitbucket": {
-    "username": process.env.MY_BITBUCKET_USERNAME,
-    "clientId": process.env.MY_BITBUCKET_CLIENT_ID,
-    "clientSecret": process.env.MY_BITBUCKET_CLIENT_SECRET
-  },
-  "elasticsearch": {
-    "host": process.env.MY_ES_HOST
-  }
-}
-```
 
 ## License
 MIT

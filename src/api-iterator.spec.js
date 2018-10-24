@@ -1,5 +1,6 @@
 const PQueue = require('p-queue');
 const MockAdapter = require('axios-mock-adapter');
+const config = require('./config');
 const BitbucketApiIterator = require('./api-iterator');
 const BitbucketApiClient = require('./api-client');
 
@@ -7,7 +8,8 @@ describe('ApiIterator', () => {
   let mock, iterator, bitbucketApiClient, queue, httpClient, url;
 
   beforeEach(async() => {
-    bitbucketApiClient = new BitbucketApiClient({'username': 'devsu'});
+    config.bitbucket.username = 'devsu';
+    bitbucketApiClient = new BitbucketApiClient(config.bitbucket);
     httpClient = bitbucketApiClient.axiosInstance;
     url = '/my-url/';
     mock = new MockAdapter(httpClient);

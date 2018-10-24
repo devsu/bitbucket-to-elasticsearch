@@ -7,9 +7,7 @@ const Queue = require('./queue');
 const BITBUCKET_BASE_API_URL = 'https://api.bitbucket.org/2.0';
 const BITBUCKET_ACCESS_TOKEN_URI = 'https://bitbucket.org/site/oauth2/access_token';
 const BITBUCKET_AUTHORIZATION_URI = 'https://bitbucket.org/site/oauth2/authorize';
-const DEFAULT_PAGE_LEN = 100;
-const DEFAULT_TIMEOUT = 10000;
-// const ONE_HOUR_IN_MILLIS = 60 * 60 * 1000;
+const DEFAULT_PAGE_LEN = 100; // max supported by bitbucket
 
 module.exports = class ApiClient {
   constructor(config) {
@@ -22,18 +20,16 @@ module.exports = class ApiClient {
       'params': {
         'pagelen': DEFAULT_PAGE_LEN,
       },
-      'timeout': DEFAULT_TIMEOUT,
+      'timeout': config.defaultTimeout,
     };
+    if (!config.queueOptions) {
+      config.queueOptions = {};
+    }
     this.axiosInstance = axios.create(axiosOptions);
-    const limitedQueueOptions = {
-      // 'intervalCap': 800, // actual limit is 1000
-      // 'interval': ONE_HOUR_IN_MILLIS,
-      'concurrency': 20,
-    };
-    this.repositoriesQueue = Queue.getQueue('repositories', limitedQueueOptions);
-    this.commitsQueue = Queue.getQueue('commits', limitedQueueOptions);
-    this.statusesQueue = Queue.getQueue('statuses', limitedQueueOptions);
-    this.refsQueue = Queue.getQueue('refs', limitedQueueOptions);
+    this.repositoriesQueue = Queue.getQueue('repositories');
+    this.commitsQueue = Queue.getQueue('commits', config.queueOptions.commits);
+    this.statusesQueue = Queue.getQueue('statuses', config.queueOptions.statuses);
+    this.refsQueue = Queue.getQueue('refs', config.queueOptions.refs);
   }
 
   async authenticate() {

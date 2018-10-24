@@ -5,9 +5,10 @@ const helper = require('../integration-tests/helper');
 const statusEs = require('../integration-tests/status-es');
 const repositoryData = require('../integration-tests/repository-es');
 const Database = require('./database');
+const config = require('./config');
 
 describe('BitbucketSync integration tests', () => {
-  let elastic, database, elasticConfig, bitbucketSync, config;
+  let elastic, database, elasticConfig, bitbucketSync;
 
   beforeAll(async() => {
     jest.setTimeout(20000);
@@ -20,12 +21,8 @@ describe('BitbucketSync integration tests', () => {
   });
 
   beforeEach(async() => {
-    config = {
-      'bitbucket': {
-        'username': 'devsu',
-      },
-      'elasticsearch': elasticConfig,
-    };
+    config.bitbucket.username = 'devsu';
+    config.elasticsearch = elasticConfig;
     bitbucketSync = new BitbucketSync(config);
     database = new Database(elasticConfig);
     await elastic.indices.delete({'index': '_all'});

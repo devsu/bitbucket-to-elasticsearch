@@ -1,3 +1,4 @@
+const _ = require('lodash');
 const PQueue = require('p-queue');
 
 const queues = {};
@@ -10,7 +11,8 @@ class Queue {
     if (queues[name]) {
       return queues[name];
     }
-    const queue = new PQueue(options);
+    const optionsWithoutUndefinedValues = _.pickBy(options, (value) => !!value);
+    const queue = new PQueue(optionsWithoutUndefinedValues);
     queue.name = name;
     queues[name] = queue;
     return queue;

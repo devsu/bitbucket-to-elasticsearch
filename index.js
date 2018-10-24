@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
-const path = require('path');
-const config = require(path.join(process.cwd(), 'config'));
+const config = require('./src/config');
 const Sync = require('./src/sync');
 const logger = require('./src/logger');
 const log = logger.child({'class': 'index.js'});
