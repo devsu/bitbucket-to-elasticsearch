@@ -396,6 +396,7 @@ describe('BitbucketSync integration tests', () => {
         const ref1 = Object.assign(_.cloneDeep(refBranchData), {'id': 'ref1'});
         ref1.target.hash = 'a';
         ref1.name = 'v0.0.1';
+        ref1.date = new Date().toISOString(); // a branch ref does not have a date, but just in case
         await database.saveRefs([ref1]);
       });
 

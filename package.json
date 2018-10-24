@@ -1,6 +1,6 @@
 {
   "name": "bitbucket-to-elasticsearch",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "A utility to import the information from Bitbucket cloud to Elastic Search for analytics.",
   "main": "index.js",
   "repository": "https://github.com/devsu/bitbucket-to-elasticsearch",

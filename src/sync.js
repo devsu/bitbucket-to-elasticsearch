@@ -228,7 +228,7 @@ module.exports = class Sync {
 
   async _getSortedMatchingRefs(repoUuid) {
     let refs = await this.database.getRefs(repoUuid);
-    refs = refs.filter((r) => this.deploymentRefsMatcher.test(r.name) && r.date);
+    refs = refs.filter((r) => r.date && r.type === 'tag' && this.deploymentRefsMatcher.test(r.name));
     return _.orderBy(refs, ['date'], ['asc']);
   }
 };
