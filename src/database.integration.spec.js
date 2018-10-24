@@ -1,10 +1,11 @@
+const _ = require('lodash');
 const elasticsearch = require('elasticsearch');
 const helper = require('../integration-tests/helper');
 const Database = require('./database');
 const repositoryData = require('../integration-tests/repository-es');
 const commitData = require('../integration-tests/commit-es');
 const statusData = require('../integration-tests/status-es');
-const refData = require('../integration-tests/ref-es');
+const refData = require('../integration-tests/ref-branch-es');
 
 describe('Database integration tests', () => {
   let database, elastic, elasticConfig;
@@ -455,7 +456,7 @@ describe('Database integration tests', () => {
     });
   });
 
-  describe('getBuildStatuses()', () => {
+  describe('getStatuses()', () => {
     let data, a, b, c, d;
 
     beforeEach(async() => {
@@ -471,8 +472,31 @@ describe('Database integration tests', () => {
 
     test('should return the build statuses for the given repo', async() => {
       const expectedData = expect.arrayContaining([a, b, c, d]);
-      const response = await database.getBuildStatuses(statusData.repository.uuid);
+      const response = await database.getStatuses(statusData.repository.uuid);
       expect(response.length).toEqual(4);
+      expect(response).toEqual(expectedData);
+    });
+  });
+
+  describe('getRefs()', () => {
+    let data, a, b, c, d;
+
+    beforeEach(async() => {
+      a = Object.assign(_.cloneDeep(refData), {'id': 'user/repo1#master', 'name': 'master'});
+      b = Object.assign(_.cloneDeep(refData), {'id': 'user/repo1#v1.0', 'name': 'v1.0'});
+      c = Object.assign(_.cloneDeep(refData), {'id': 'user/repo2#master', 'name': 'master'});
+      d = Object.assign(_.cloneDeep(refData), {'id': 'user/repo2#v1.0', 'name': 'v1.0'});
+      c.target.repository.uuid = d.target.repository.uuid = 'another';
+      data = [a, b, c, d];
+      await database.setup();
+      await elastic.indices.flush({'waitIfOngoing': true});
+      await database.saveRefs(data);
+    });
+
+    test('should return the refs for the given repo', async() => {
+      const expectedData = expect.arrayContaining([a, b]);
+      const response = await database.getRefs(refData.target.repository.uuid);
+      expect(response.length).toEqual(2);
       expect(response).toEqual(expectedData);
     });
   });

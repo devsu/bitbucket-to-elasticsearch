@@ -1,0 +1,132 @@
+{
+  "name": "v0.0.0",
+  "links": {
+    "commits": {
+      "href": "https://api.bitbucket.org/2.0/repositories/devsu/eslint-plugin-devsu/commits/v0.0.0"
+    },
+    "self": {
+      "href": "https://api.bitbucket.org/2.0/repositories/devsu/eslint-plugin-devsu/refs/tags/v0.0.0"
+    },
+    "html": {
+      "href": "https://bitbucket.org/devsu/eslint-plugin-devsu/commits/tag/v0.0.0"
+    }
+  },
+  "tagger": {
+    "raw": "Cesar Salazar <csalazar@devsu.com>",
+    "type": "author",
+    "user": {
+      "username": "c3s4r",
+      "display_name": "Cesar Salazar",
+      "account_id": "557058:6dc86b23-4958-445b-b84e-37c34f59b9e5",
+      "links": {
+        "self": {
+          "href": "https://api.bitbucket.org/2.0/users/c3s4r"
+        },
+        "html": {
+          "href": "https://bitbucket.org/c3s4r/"
+        },
+        "avatar": {
+          "href": "https://bitbucket.org/account/c3s4r/avatar/"
+        }
+      },
+      "nickname": "c3s4r",
+      "type": "user",
+      "uuid": "{c60f5446-7d88-4b5a-8c62-d07119f9b0a3}"
+    }
+  },
+  "date": "2018-10-24T19:10:05+00:00",
+  "message": "Release v0.0.0\n",
+  "type": "tag",
+  "target": {
+    "hash": "6de4deee89aafee431b9382af5fce0f2b744c603",
+    "repository": {
+      "links": {
+        "self": {
+          "href": "https://api.bitbucket.org/2.0/repositories/devsu/eslint-plugin-devsu"
+        },
+        "html": {
+          "href": "https://bitbucket.org/devsu/eslint-plugin-devsu"
+        },
+        "avatar": {
+          "href": "https://bytebucket.org/ravatar/%7Ba95d72fe-441a-4d7d-bb69-2118647bd72b%7D?ts=js"
+        }
+      },
+      "type": "repository",
+      "name": "eslint-plugin-devsu",
+      "full_name": "devsu/eslint-plugin-devsu",
+      "uuid": "{a95d72fe-441a-4d7d-bb69-2118647bd72b}"
+    },
+    "links": {
+      "self": {
+        "href": "https://api.bitbucket.org/2.0/repositories/devsu/eslint-plugin-devsu/commit/6de4deee89aafee431b9382af5fce0f2b744c603"
+      },
+      "comments": {
+        "href": "https://api.bitbucket.org/2.0/repositories/devsu/eslint-plugin-devsu/commit/6de4deee89aafee431b9382af5fce0f2b744c603/comments"
+      },
+      "html": {
+        "href": "https://bitbucket.org/devsu/eslint-plugin-devsu/commits/6de4deee89aafee431b9382af5fce0f2b744c603"
+      },
+      "diff": {
+        "href": "https://api.bitbucket.org/2.0/repositories/devsu/eslint-plugin-devsu/diff/6de4deee89aafee431b9382af5fce0f2b744c603"
+      },
+      "approve": {
+        "href": "https://api.bitbucket.org/2.0/repositories/devsu/eslint-plugin-devsu/commit/6de4deee89aafee431b9382af5fce0f2b744c603/approve"
+      },
+      "statuses": {
+        "href": "https://api.bitbucket.org/2.0/repositories/devsu/eslint-plugin-devsu/commit/6de4deee89aafee431b9382af5fce0f2b744c603/statuses"
+      }
+    },
+    "author": {
+      "raw": "Jaime Gonzalez <jgonzalez@devsu.com>",
+      "type": "author",
+      "user": {
+        "username": "jgonzalez87",
+        "display_name": "Jaime Gonzalez",
+        "account_id": "557058:612153e1-32c8-4ff7-9a95-194fc260be5e",
+        "links": {
+          "self": {
+            "href": "https://api.bitbucket.org/2.0/users/jgonzalez87"
+          },
+          "html": {
+            "href": "https://bitbucket.org/jgonzalez87/"
+          },
+          "avatar": {
+            "href": "https://bitbucket.org/account/jgonzalez87/avatar/"
+          }
+        },
+        "nickname": "jgonzalez87",
+        "type": "user",
+        "uuid": "{8b22b5fe-37db-4fcb-861f-4979c3cfb048}"
+      }
+    },
+    "parents": [
+      {
+        "hash": "97c944512ae08fec7429125ed67d0b6042a9087b",
+        "type": "commit",
+        "links": {
+          "self": {
+            "href": "https://api.bitbucket.org/2.0/repositories/devsu/eslint-plugin-devsu/commit/97c944512ae08fec7429125ed67d0b6042a9087b"
+          },
+          "html": {
+            "href": "https://bitbucket.org/devsu/eslint-plugin-devsu/commits/97c944512ae08fec7429125ed67d0b6042a9087b"
+          }
+        }
+      },
+      {
+        "hash": "e53e38697d5dd113f998594ac66eda8ebe1c663c",
+        "type": "commit",
+        "links": {
+          "self": {
+            "href": "https://api.bitbucket.org/2.0/repositories/devsu/eslint-plugin-devsu/commit/e53e38697d5dd113f998594ac66eda8ebe1c663c"
+          },
+          "html": {
+            "href": "https://bitbucket.org/devsu/eslint-plugin-devsu/commits/e53e38697d5dd113f998594ac66eda8ebe1c663c"
+          }
+        }
+      }
+    ],
+    "date": "2016-08-05T17:19:48+00:00",
+    "message": "Merged in ocd-config (pull request #12)\n\nOCD rules added.\n",
+    "type": "commit"
+  }
+}

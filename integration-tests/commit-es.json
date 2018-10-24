@@ -1,6 +1,7 @@
 {
   "hash": "6de4deee89aafee431b9382af5fce0f2b744c603",
   "repository": {
+    "type": "repository",
     "uuid": "{a95d72fe-441a-4d7d-bb69-2118647bd72b}",
     "name": "eslint-plugin-devsu",
     "full_name": "devsu/eslint-plugin-devsu"

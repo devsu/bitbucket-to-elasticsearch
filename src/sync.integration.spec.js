@@ -1,10 +1,13 @@
 jest.unmock('client-oauth2');
+const _ = require('lodash');
 const elasticsearch = require('elasticsearch');
 const BitbucketSync = require('./sync');
 const helper = require('../integration-tests/helper');
 const statusData = require('../integration-tests/status-es');
 const repositoryData = require('../integration-tests/repository-es');
 const commitData = require('../integration-tests/commit-es');
+const refBranchData = require('../integration-tests/ref-branch-es');
+const refTagData = require('../integration-tests/ref-tag-es');
 const Database = require('./database');
 const config = require('./config');
 
@@ -171,13 +174,13 @@ describe('BitbucketSync integration tests', () => {
 
     beforeEach(async() => {
       oldIsoDate = new Date(2010,1,1).toISOString();
-      const a = Object.assign({}, commitData, {'hash': 'a', 'parents':['b']});
-      const b = Object.assign({}, commitData, {'hash': 'b', 'parents':['c', 'd']});
-      const c = Object.assign({}, commitData, {'hash': 'c', 'parents':['e']});
-      const d = Object.assign({}, commitData, {'hash': 'd', 'parents':['e'], 'firstSuccessfulBuildDate': oldIsoDate});
-      const e = Object.assign({}, commitData, {'hash': 'e', 'parents':['f'], 'firstSuccessfulBuildDate': oldIsoDate});
-      const f = Object.assign({}, commitData, {'hash': 'f', 'parents':[], 'firstSuccessfulBuildDate': oldIsoDate});
-      const g = Object.assign({}, commitData, {'hash': 'g', 'parents':['f']});
+      const a = Object.assign(_.cloneDeep(commitData), {'hash': 'a', 'parents':['b']});
+      const b = Object.assign(_.cloneDeep(commitData), {'hash': 'b', 'parents':['c', 'd']});
+      const c = Object.assign(_.cloneDeep(commitData), {'hash': 'c', 'parents':['e']});
+      const d = Object.assign(_.cloneDeep(commitData), {'hash': 'd', 'parents':['e'], 'firstSuccessfulBuildDate': oldIsoDate});
+      const e = Object.assign(_.cloneDeep(commitData), {'hash': 'e', 'parents':['f'], 'firstSuccessfulBuildDate': oldIsoDate});
+      const f = Object.assign(_.cloneDeep(commitData), {'hash': 'f', 'parents':[], 'firstSuccessfulBuildDate': oldIsoDate});
+      const g = Object.assign(_.cloneDeep(commitData), {'hash': 'g', 'parents':['f']});
       const status = Object.assign({}, statusData);
       status.commit.hash = 'a';
       await elastic.indices.flush({'waitIfOngoing': true});
@@ -230,6 +233,196 @@ describe('BitbucketSync integration tests', () => {
         await elastic.indices.refresh();
         const repo = await elastic.get({'index': 'repositories', 'type': 'repository', 'id': repositoryData.uuid});
         expect(repo._source.firstSuccessfulBuildDate).toEqual(oldIsoDate);
+      });
+    });
+  });
+
+  describe('updateFirstSuccessfulDeploymentDate()', () => {
+    let oldIsoDate;
+
+    beforeEach(async() => {
+      oldIsoDate = new Date(2010,1,1).toISOString();
+      const a = Object.assign(_.cloneDeep(commitData), {'hash': 'a', 'parents':['b']});
+      const b = Object.assign(_.cloneDeep(commitData), {'hash': 'b', 'parents':['c', 'd']});
+      const c = Object.assign(_.cloneDeep(commitData), {'hash': 'c', 'parents':['e']});
+      const d = Object.assign(_.cloneDeep(commitData), {'hash': 'd', 'parents':['e'], 'firstSuccessfulDeploymentDate': oldIsoDate});
+      const e = Object.assign(_.cloneDeep(commitData), {'hash': 'e', 'parents':['f'], 'firstSuccessfulDeploymentDate': oldIsoDate});
+      const f = Object.assign(_.cloneDeep(commitData), {'hash': 'f', 'parents':[], 'firstSuccessfulDeploymentDate': oldIsoDate});
+      const g = Object.assign(_.cloneDeep(commitData), {'hash': 'g', 'parents':['f']});
+      await elastic.indices.flush({'waitIfOngoing': true});
+      await Promise.all([
+        database.saveCommits([a, b, c, d, e, f, g]),
+        database.saveRepositories([repositoryData]),
+      ]);
+    });
+
+    describe('when ref name matches with deployment tag name regex', () => {
+      beforeEach(async() => {
+        const ref1 = Object.assign(_.cloneDeep(refBranchData), {'id': 'ref1'});
+        const ref2 = Object.assign(_.cloneDeep(refTagData), {'id': 'ref2'});
+        ref1.target.hash = 'a';
+        ref2.target.hash = 'a';
+        ref2.name = 'v0.0.1';
+        await database.saveRefs([ref1, ref2]);
+      });
+
+      test('should set firstSuccessfulDeploymentDate on corresponding commits, but not on other commits', async() => {
+        await bitbucketSync.updateFirstSuccessfulDeploymentDate(repositoryData.uuid);
+        await elastic.indices.refresh();
+        const commitA = await elastic.get({'index': 'commits', 'type': 'commit', 'id': 'a'});
+        const commitB = await elastic.get({'index': 'commits', 'type': 'commit', 'id': 'b'});
+        const commitC = await elastic.get({'index': 'commits', 'type': 'commit', 'id': 'c'});
+        const commitD = await elastic.get({'index': 'commits', 'type': 'commit', 'id': 'd'});
+        const commitE = await elastic.get({'index': 'commits', 'type': 'commit', 'id': 'e'});
+        const commitF = await elastic.get({'index': 'commits', 'type': 'commit', 'id': 'f'});
+        const commitG = await elastic.get({'index': 'commits', 'type': 'commit', 'id': 'g'});
+        expect(commitA._source.firstSuccessfulDeploymentDate).toEqual(refTagData.date);
+        expect(commitB._source.firstSuccessfulDeploymentDate).toEqual(refTagData.date);
+        expect(commitC._source.firstSuccessfulDeploymentDate).toEqual(refTagData.date);
+        expect(commitD._source.firstSuccessfulDeploymentDate).toEqual(oldIsoDate);
+        expect(commitE._source.firstSuccessfulDeploymentDate).toEqual(oldIsoDate);
+        expect(commitF._source.firstSuccessfulDeploymentDate).toEqual(oldIsoDate);
+        expect(commitG._source.firstSuccessfulDeploymentDate).toBeUndefined();
+      });
+
+      describe('firstSuccessfulDeploymentDate hasnt been previously set on repo', () => {
+        test('should set firstSuccessfulDeploymentDate on repo', async() => {
+          await bitbucketSync.updateFirstSuccessfulDeploymentDate(repositoryData.uuid);
+          await elastic.indices.refresh();
+          const repo = await elastic.get({'index': 'repositories', 'type': 'repository', 'id': repositoryData.uuid});
+          expect(repo._source.firstSuccessfulDeploymentDate).toEqual(refTagData.date);
+        });
+      });
+
+      describe('firstSuccessfulDeploymentDate already set on repo', () => {
+        let oldIsoDate;
+
+        beforeEach(async() => {
+          oldIsoDate = new Date(2001,1,1).toISOString();
+          const updatedRepo = Object.assign({}, repositoryData, {'firstSuccessfulDeploymentDate': oldIsoDate});
+          await database.saveRepositories([updatedRepo]);
+        });
+
+        test('should not change it', async() => {
+          await bitbucketSync.updateFirstSuccessfulDeploymentDate(repositoryData.uuid);
+          await elastic.indices.refresh();
+          const repo = await elastic.get({'index': 'repositories', 'type': 'repository', 'id': repositoryData.uuid});
+          expect(repo._source.firstSuccessfulDeploymentDate).toEqual(oldIsoDate);
+        });
+      });
+    });
+
+    describe('when ref name does not match with deployment tag name regex', () => {
+      beforeEach(async() => {
+        const ref1 = Object.assign(_.cloneDeep(refBranchData), {'id': 'ref1'});
+        const ref2 = Object.assign(_.cloneDeep(refTagData), {'id': 'ref2'});
+        ref1.target.hash = 'a';
+        ref2.target.hash = 'a';
+        ref2.name = '###not-matching-name###';
+        await database.saveRefs([ref1, ref2]);
+      });
+
+      test('should not change any commit', async() => {
+        await bitbucketSync.updateFirstSuccessfulDeploymentDate(repositoryData.uuid);
+        await elastic.indices.refresh();
+        const commitA = await elastic.get({'index': 'commits', 'type': 'commit', 'id': 'a'});
+        const commitB = await elastic.get({'index': 'commits', 'type': 'commit', 'id': 'b'});
+        const commitC = await elastic.get({'index': 'commits', 'type': 'commit', 'id': 'c'});
+        const commitD = await elastic.get({'index': 'commits', 'type': 'commit', 'id': 'd'});
+        const commitE = await elastic.get({'index': 'commits', 'type': 'commit', 'id': 'e'});
+        const commitF = await elastic.get({'index': 'commits', 'type': 'commit', 'id': 'f'});
+        const commitG = await elastic.get({'index': 'commits', 'type': 'commit', 'id': 'g'});
+        expect(commitA._source.firstSuccessfulDeploymentDate).toBeUndefined();
+        expect(commitB._source.firstSuccessfulDeploymentDate).toBeUndefined();
+        expect(commitC._source.firstSuccessfulDeploymentDate).toBeUndefined();
+        expect(commitD._source.firstSuccessfulDeploymentDate).toEqual(oldIsoDate);
+        expect(commitE._source.firstSuccessfulDeploymentDate).toEqual(oldIsoDate);
+        expect(commitF._source.firstSuccessfulDeploymentDate).toEqual(oldIsoDate);
+        expect(commitG._source.firstSuccessfulDeploymentDate).toBeUndefined();
+      });
+
+      test('should not change the repository', async() => {
+        await bitbucketSync.updateFirstSuccessfulDeploymentDate(repositoryData.uuid);
+        await elastic.indices.refresh();
+        const repo = await elastic.get({'index': 'repositories', 'type': 'repository', 'id': repositoryData.uuid});
+        expect(repo._source.firstSuccessfulDeploymentDate).toBeUndefined();
+      });
+    });
+
+    describe('when multiple refs available', () => {
+      let date1, date2;
+
+      beforeEach(async() => {
+        date1 = new Date(2010,1,1).toISOString();
+        date2 = new Date(2012,10,10).toISOString();
+        const ref1 = Object.assign(_.cloneDeep(refTagData), {'id': 'ref1'});
+        const ref2 = Object.assign(_.cloneDeep(refTagData), refTagData, {'id': 'ref2'});
+        ref1.target.hash = 'b';
+        ref2.target.hash = 'a';
+        ref1.date = date1;
+        ref2.date = date2;
+        await database.saveRefs([ref1, ref2]);
+      });
+
+      test('should start with the older tag', async() => {
+        await bitbucketSync.updateFirstSuccessfulDeploymentDate(repositoryData.uuid);
+        await elastic.indices.refresh();
+        const commitA = await elastic.get({'index': 'commits', 'type': 'commit', 'id': 'a'});
+        const commitB = await elastic.get({'index': 'commits', 'type': 'commit', 'id': 'b'});
+        const commitC = await elastic.get({'index': 'commits', 'type': 'commit', 'id': 'c'});
+        const commitD = await elastic.get({'index': 'commits', 'type': 'commit', 'id': 'd'});
+        const commitE = await elastic.get({'index': 'commits', 'type': 'commit', 'id': 'e'});
+        const commitF = await elastic.get({'index': 'commits', 'type': 'commit', 'id': 'f'});
+        const commitG = await elastic.get({'index': 'commits', 'type': 'commit', 'id': 'g'});
+        expect(commitA._source.firstSuccessfulDeploymentDate).toEqual(date2);
+        expect(commitB._source.firstSuccessfulDeploymentDate).toEqual(date1);
+        expect(commitC._source.firstSuccessfulDeploymentDate).toEqual(date1);
+        expect(commitD._source.firstSuccessfulDeploymentDate).toEqual(oldIsoDate);
+        expect(commitE._source.firstSuccessfulDeploymentDate).toEqual(oldIsoDate);
+        expect(commitF._source.firstSuccessfulDeploymentDate).toEqual(oldIsoDate);
+        expect(commitG._source.firstSuccessfulDeploymentDate).toBeUndefined();
+      });
+
+      test('should set the first date', async() => {
+        await bitbucketSync.updateFirstSuccessfulDeploymentDate(repositoryData.uuid);
+        await elastic.indices.refresh();
+        const repo = await elastic.get({'index': 'repositories', 'type': 'repository', 'id': repositoryData.uuid});
+        expect(repo._source.firstSuccessfulDeploymentDate).toEqual(date1);
+      });
+    });
+
+    describe('when ref name matches but its not a tag (its a branch)', () => {
+      beforeEach(async() => {
+        const ref1 = Object.assign(_.cloneDeep(refBranchData), {'id': 'ref1'});
+        ref1.target.hash = 'a';
+        ref1.name = 'v0.0.1';
+        await database.saveRefs([ref1]);
+      });
+
+      test('should not change any commit', async() => {
+        await bitbucketSync.updateFirstSuccessfulDeploymentDate(repositoryData.uuid);
+        await elastic.indices.refresh();
+        const commitA = await elastic.get({'index': 'commits', 'type': 'commit', 'id': 'a'});
+        const commitB = await elastic.get({'index': 'commits', 'type': 'commit', 'id': 'b'});
+        const commitC = await elastic.get({'index': 'commits', 'type': 'commit', 'id': 'c'});
+        const commitD = await elastic.get({'index': 'commits', 'type': 'commit', 'id': 'd'});
+        const commitE = await elastic.get({'index': 'commits', 'type': 'commit', 'id': 'e'});
+        const commitF = await elastic.get({'index': 'commits', 'type': 'commit', 'id': 'f'});
+        const commitG = await elastic.get({'index': 'commits', 'type': 'commit', 'id': 'g'});
+        expect(commitA._source.firstSuccessfulDeploymentDate).toBeUndefined();
+        expect(commitB._source.firstSuccessfulDeploymentDate).toBeUndefined();
+        expect(commitC._source.firstSuccessfulDeploymentDate).toBeUndefined();
+        expect(commitD._source.firstSuccessfulDeploymentDate).toEqual(oldIsoDate);
+        expect(commitE._source.firstSuccessfulDeploymentDate).toEqual(oldIsoDate);
+        expect(commitF._source.firstSuccessfulDeploymentDate).toEqual(oldIsoDate);
+        expect(commitG._source.firstSuccessfulDeploymentDate).toBeUndefined();
+      });
+
+      test('should not change the repository', async() => {
+        await bitbucketSync.updateFirstSuccessfulDeploymentDate(repositoryData.uuid);
+        await elastic.indices.refresh();
+        const repo = await elastic.get({'index': 'repositories', 'type': 'repository', 'id': repositoryData.uuid});
+        expect(repo._source.firstSuccessfulDeploymentDate).toBeUndefined();
       });
     });
   });

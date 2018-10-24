@@ -13,6 +13,7 @@ module.exports = class Sync {
     this.config = config;
     this.bitbucket = new BitbucketApiClient(config.bitbucket);
     this.database = new Database(config.elasticsearch);
+    this.deploymentRefsMatcher = new RegExp(config.analytics.deploymentTagsPattern);
   }
 
   async execute() {
@@ -78,9 +79,7 @@ module.exports = class Sync {
   }
 
   async updateFirstSuccessfulBuildDate(repoUuid) {
-    let statuses = await this.database.getBuildStatuses(repoUuid);
-    statuses = statuses.filter((s) => s.state === 'SUCCESSFUL');
-    statuses = _.orderBy(statuses, ['updated_on'], ['asc']);
+    const statuses = await this._getSortedSuccessfulStatuses(repoUuid);
     for (let i = 0; i < statuses.length; i++) {
       const commitsToUpdate = await this.database.getCommitAncestors(statuses[i].commit.hash, (commit) => {
         return !commit.firstSuccessfulBuildDate;
@@ -89,6 +88,21 @@ module.exports = class Sync {
       const updateInfo = {'firstSuccessfulBuildDate': statuses[i].updated_on};
       await this.database.updateCommits(commitsToUpdate, updateInfo);
       if (!repoInDb.firstSuccessfulBuildDate) {
+        await this.database.updateRepositories([repoUuid], updateInfo);
+      }
+    }
+  }
+
+  async updateFirstSuccessfulDeploymentDate(repoUuid) {
+    let refs = await this._getSortedMatchingRefs(repoUuid);
+    for (let i = 0; i < refs.length; i++) {
+      const commitsToUpdate = await this.database.getCommitAncestors(refs[i].target.hash, (commit) => {
+        return !commit.firstSuccessfulDeploymentDate;
+      });
+      const repoInDb = await this.database.getRepository(repoUuid);
+      const updateInfo = {'firstSuccessfulDeploymentDate': refs[i].date};
+      await this.database.updateCommits(commitsToUpdate, updateInfo);
+      if (!repoInDb.firstSuccessfulDeploymentDate) {
         await this.database.updateRepositories([repoUuid], updateInfo);
       }
     }
@@ -156,7 +170,6 @@ module.exports = class Sync {
       delete transformed.author.user.links;
     }
     delete transformed.repository.links;
-    delete transformed.repository.type;
     delete transformed.summary;
     transformed.parents = data.parents.map((parent) => parent.hash);
     return transformed;
@@ -185,7 +198,10 @@ module.exports = class Sync {
     delete transformed.links;
     delete transformed.default_merge_strategy;
     delete transformed.merge_strategies;
-    transformed.target = transformed.target.hash;
+    transformed.target = Sync.transformCommit(transformed.target);
+    if (transformed.tagger && transformed.tagger.user) {
+      delete transformed.tagger.user.links;
+    }
     return transformed;
   }
 
@@ -195,5 +211,17 @@ module.exports = class Sync {
 
   static obtainSlugs(data) {
     return data.map((item) => item.slug);
+  }
+
+  async _getSortedSuccessfulStatuses(repoUuid) {
+    let statuses = await this.database.getStatuses(repoUuid);
+    statuses = statuses.filter((s) => s.state === 'SUCCESSFUL');
+    return _.orderBy(statuses, ['updated_on'], ['asc']);
+  }
+
+  async _getSortedMatchingRefs(repoUuid) {
+    let refs = await this.database.getRefs(repoUuid);
+    refs = refs.filter((r) => this.deploymentRefsMatcher.test(r.name) && r.date);
+    return _.orderBy(refs, ['date'], ['asc']);
   }
 };

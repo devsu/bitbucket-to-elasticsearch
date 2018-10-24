@@ -44,4 +44,8 @@ module.exports = Object.assign({
   'elasticsearch': {
     'host': process.env.BB2ES_BITBUCKET_CLIENT_SECRET || '127.0.0.1:9200',
   },
+  'analytics': {
+    // we assume that the tags that match this pattern were deployed (used to calculate firstSuccessfulDeploymentDate)
+    'deploymentTagsPattern': process.env.BB2ES_ANALYTICS_DEPLOYMENT_TAGS_PATTERN || 'v.+',
+  },
 }, configJson);

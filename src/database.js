@@ -28,69 +28,27 @@ class Database {
   }
 
   async saveRepositories(data) {
-    if (!data) {
-      throw new Error('data is required');
-    }
-    return await this.elastic.bulk({
-      'body': Database._getBulkUpsertBody('repositories', 'repository', 'uuid', data),
-      'refresh': true,
-    });
+    return await this._saveAll('repositories', 'repository', 'uuid', data);
   }
 
   async saveCommits(data) {
-    if (!data) {
-      throw new Error('data is required');
-    }
-    return await this.elastic.bulk({
-      'body': Database._getBulkUpsertBody('commits', 'commit', 'hash', data),
-      'refresh': true,
-    });
+    return await this._saveAll('commits', 'commit', 'hash', data);
   }
 
   async saveStatuses(data) {
-    if (!data) {
-      throw new Error('data is required');
-    }
-    return await this.elastic.bulk({
-      'body': Database._getBulkUpsertBody('statuses', 'status', 'id', data),
-      'refresh': true,
-    });
+    return await this._saveAll('statuses', 'status', 'id', data);
   }
 
   async saveRefs(data) {
-    if (!data) {
-      throw new Error('data is required');
-    }
-    return await this.elastic.bulk({
-      'body': Database._getBulkUpsertBody('refs', 'ref', 'id', data),
-      'refresh': true,
-    });
+    return await this._saveAll('refs', 'ref', 'id', data);
   }
 
   async getRepository(uuid) {
-    try {
-      const repositoryResponse = await this.elastic.get({
-        'index': 'repositories',
-        'type': 'repository',
-        'id': uuid,
-      });
-      return repositoryResponse._source;
-    } catch (e) {
-      return null;
-    }
+    return await this._getOne('repositories', 'repository', uuid);
   }
 
   async getCommit(hash) {
-    try {
-      const response = await this.elastic.get({
-        'index': 'commits',
-        'type': 'commit',
-        'id': hash,
-      });
-      return response._source;
-    } catch (e) {
-      return null;
-    }
+    return await this._getOne('commits', 'commit', hash);
   }
 
   async getCommitAncestors(hash, filter, accum) {
@@ -105,51 +63,72 @@ class Database {
     return ancestors;
   }
 
-  async updateCommits(hashes, properties) {
-    const body = Database._getBulkUpdateBody('commits', 'commit', hashes, properties);
-    if (body.length) {
-      return await this.elastic.bulk({
-        'body': body,
-        'refresh': true,
-      });
-    }
+  async updateCommits(hashes, data) {
+    return await this._updateAll('commits', 'commit', hashes, data);
   }
 
-  async updateRepositories(uuids, properties) {
-    const body = Database._getBulkUpdateBody('repositories', 'repository', uuids, properties);
-    if (body.length) {
-      return await this.elastic.bulk({
-        'body': body,
-        'refresh': true,
-      });
-    }
+  async updateRepositories(uuids, data) {
+    return await this._updateAll('repositories', 'repository', uuids, data);
   }
 
   async getRepositories() {
-    // TODO: Elasticsearch search limit is 10000, we should make this query scrollable!
-    const response = await this.elastic.search({
-      'index': 'repositories',
-      'type': 'repository',
+    return await this._getAll('repositories', 'repository');
+  }
+
+  async getStatuses(repoUuid) {
+    const query = `repository.uuid:"${repoUuid}"`;
+    return await this._getAll('statuses', 'status', query);
+  }
+
+  async getRefs(repoUuid) {
+    const query = `target.repository.uuid:"${repoUuid}"`;
+    return await this._getAll('refs', 'ref', query);
+  }
+
+  async _getOne(index, type, id) {
+    try {
+      const response = await this.elastic.get({index, type, id});
+      return response._source;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async _getAll(index, type, query) {
+    // TODO: Elasticsearch search limit is 10000, we should make queries scrollables!
+    const options = {
+      'index': index,
+      'type': type,
       'size': 10000,
-    });
+    };
+    if (query) {
+      options.q = query;
+    }
+    const response = await this.elastic.search(options);
     if (response.hits.total >= 9999) {
-      log.warn('getRepositories data probably missing! Scroll needs to be implemented!');
+      log.warn('data probably missing! Scroll needs to be implemented!');
     }
     return response.hits.hits.map((s) => s._source);
   }
 
-  async getBuildStatuses(repoUuid) {
-    // TODO: Elasticsearch search limit is 10000, we should make this query scrollable!
-    const response = await this.elastic.search({
-      'index': 'statuses',
-      'type': 'status',
-      'q': `repository.uuid:"${repoUuid}"`,
-      'size': 10000,
-    });
-    if (response.hits.total >= 9999) {
-      log.warn('getBuildStatuses data probably missing! Scroll needs to be implemented!');
+  async _saveAll(index, type, idProperty, data) {
+    if (!data) {
+      throw new Error('data is required');
     }
-    return response.hits.hits.map((s) => s._source);
+    return await this.elastic.bulk({
+      'body': Database._getBulkUpsertBody(index, type, idProperty, data),
+      'refresh': true,
+    });
+  }
+
+  async _updateAll(index, type, ids, data) {
+    const body = Database._getBulkUpdateBody(index, type, ids, data);
+    if (body.length) {
+      return await this.elastic.bulk({
+        'body': body,
+        'refresh': true,
+      });
+    }
   }
 
   static _getBulkUpsertBody(index, type, id, data) {
