@@ -7,8 +7,11 @@ describe('config', () => {
     });
 
     test('should return default values', () => {
-      expect(config).toEqual({
+      expect(config).toEqual(expect.objectContaining({
         'bitbucket': {
+          'username': expect.any(String),
+          "clientId": expect.any(String),
+          "clientSecret": expect.any(String),
           'defaultTimeout': expect.any(Number),
           'queueOptions': {
             'processRepo': {
@@ -31,7 +34,7 @@ describe('config', () => {
         'analytics': {
           'deploymentTagsPattern': expect.any(String),
         },
-      });
+      }));
     });
   });
 
