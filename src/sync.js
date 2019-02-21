@@ -3,6 +3,7 @@ const BitbucketApiClient = require('./api-client');
 const Database = require('./database');
 const logger = require('./logger');
 const Queue = require('./queue');
+const uuid = require('uuid/v4');
 const log = logger.child({'class': 'Sync'});
 
 module.exports = class Sync {
@@ -50,6 +51,7 @@ module.exports = class Sync {
       minDate = new Date(repoInDatabase.updated_on);
       log.info({'full_name': repo.full_name}, 'Updating only commits newer than %s', minDate);
     }
+
     await Promise.all([
       this.synchronizeCommits(repo.slug, minDate),
       this.synchronizeRefs(repo.slug),
@@ -112,6 +114,15 @@ module.exports = class Sync {
       const repoInDb = await this.database.getRepository(repoUuid);
       const updateInfo = {'firstSuccessfulDeploymentDate': refs[i].date};
       await this.database.updateCommits(commitsToUpdate, updateInfo);
+      await this.database.saveDeployments(
+        [{
+          'id': uuid(),
+          'project': repoInDb.project,
+          'deploymentDate': refs[i].date,
+          'repository': repoInDb,
+          'author': refs[i].target.author
+        }]
+      );
       if (!repoInDb.firstSuccessfulDeploymentDate) {
         await this.database.updateRepositories([repoUuid], updateInfo);
       }
@@ -164,7 +175,7 @@ module.exports = class Sync {
     const transformed = Object.assign({}, data);
     delete transformed.links;
     transformed.owner = data.owner.username;
-    transformed.project = data.project.key;
+    transformed.project = Sync.transformProject(data.project);
     transformed.mainbranch = data.mainbranch ? data.mainbranch.name : data.mainbranch;
     return transformed;
   }
@@ -183,6 +194,12 @@ module.exports = class Sync {
     delete transformed.summary;
     transformed.parents = data.parents.map((parent) => parent.hash);
     return transformed;
+  }
+
+  static transformProject(data) {
+    const transformed = Object.assign({}, data);
+    delete transformed.links;
+    return transformed
   }
 
   static transformCommits(data) {

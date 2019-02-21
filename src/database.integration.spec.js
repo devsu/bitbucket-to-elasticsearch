@@ -36,10 +36,12 @@ describe('Database integration tests', () => {
         const existsCommits = await elastic.indices.exists({'index': 'commits'});
         const existsStatuses = await elastic.indices.exists({'index': 'statuses'});
         const existsRefs = await elastic.indices.exists({'index': 'refs'});
+        const existsDeployments = await elastic.indices.exists({'index': 'deployments'});
         expect(existsRepositories).toEqual(true);
         expect(existsCommits).toEqual(true);
         expect(existsStatuses).toEqual(true);
         expect(existsRefs).toEqual(true);
+        expect(existsDeployments).toEqual(true)
       });
     });
 
@@ -82,6 +84,18 @@ describe('Database integration tests', () => {
     describe('when refs index already exists', () => {
       beforeEach(async() => {
         await elastic.indices.create({'index': 'refs'});
+        await elastic.indices.flush({'waitIfOngoing': true});
+      });
+
+      test('should not fail', async() => {
+        await database.setup();
+        await elastic.indices.flush({'waitIfOngoing': true});
+      });
+    });
+
+    describe('when deployments index already exists', () => {
+      beforeEach(async() => {
+        await elastic.indices.create({'index': 'deployments'});
         await elastic.indices.flush({'waitIfOngoing': true});
       });
 
@@ -326,6 +340,44 @@ describe('Database integration tests', () => {
         }));
         await database.saveRefs(data);
         const response = await elastic.search({'index': 'refs', 'type': 'ref'});
+        expect(response.hits.total).toEqual(2);
+        expect(response.hits.hits).toEqual(expectedData);
+      });
+    });
+  });
+
+  describe('saveDeployments()', () => {
+    let data;
+
+    beforeEach(async() => {
+      const first = {'id': 'first'};
+      const second = {'id': 'second'};
+      data = [first, second];
+      await database.setup();
+      await elastic.indices.flush({'waitIfOngoing': true});
+    });
+
+    describe('when no data passed', () => {
+      test('should fail', async() => {
+        try {
+          await database.saveDeployments();
+          fail('should fail');
+        } catch (e) {
+          expect(e.message).toEqual('data is required');
+        }
+      });
+    });
+
+    describe('when a document does not exist in the DB', () => {
+      test('should insert the document', async() => {
+        const expectedData = expect.arrayContaining(data.map((dataItem) => {
+          return expect.objectContaining({
+            '_id': dataItem.id,
+            '_source': dataItem,
+          });
+        }));
+        await database.saveDeployments(data);
+        const response = await elastic.search({'index': 'deployments', 'type': 'deployment'});
         expect(response.hits.total).toEqual(2);
         expect(response.hits.hits).toEqual(expectedData);
       });
