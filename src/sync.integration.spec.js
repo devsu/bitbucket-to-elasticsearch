@@ -26,6 +26,8 @@ describe('BitbucketSync integration tests', () => {
 
   beforeEach(async() => {
     config.bitbucket.username = 'devsu';
+    delete config.bitbucket.clientId;
+    delete config.bitbucket.clientSecret;
     config.elasticsearch = elasticConfig;
     bitbucketSync = new BitbucketSync(config);
     database = new Database(elasticConfig);
@@ -34,6 +36,7 @@ describe('BitbucketSync integration tests', () => {
     await elastic.indices.create({'index': 'repositories'});
     await elastic.indices.create({'index': 'commits'});
     await elastic.indices.create({'index': 'statuses'});
+    await elastic.indices.create({'index': 'deployments'});
     await elastic.indices.flush({'waitIfOngoing': true});
   });
 
@@ -67,15 +70,17 @@ describe('BitbucketSync integration tests', () => {
   });
 
   describe('synchronizeRepositories()', () => {
-    test('should import repositories, commits and refs', async() => {
+    test('should import repositories, commits, refs and deployments', async() => {
       await bitbucketSync.synchronizeRepositories();
       await elastic.indices.refresh();
       const result1 = await elastic.count({'index': 'repositories'});
       const result2 = await elastic.count({'index': 'commits'});
       const result3 = await elastic.count({'index': 'refs'});
+      const result4 = await elastic.count({'index': 'deployments'});
       expect(result1.count).toBeGreaterThan(0);
       expect(result2.count).toBeGreaterThan(0);
       expect(result3.count).toBeGreaterThan(0);
+      expect(result4.count).toBeGreaterThan(0);
     });
 
     test('should set firstSuccessfulBuildDate on corresponding commits', async() => {
@@ -327,6 +332,13 @@ describe('BitbucketSync integration tests', () => {
         ref2.target.hash = 'a';
         ref2.name = '###not-matching-name###';
         await database.saveRefs([ref1, ref2]);
+      });
+
+      test('should save a new deployment', async() => {
+        await bitbucketSync.updateFirstSuccessfulDeploymentDate(repositoryData.uuid);
+        await elastic.indices.refresh();
+        const deployments = await elastic.count({'index': 'deployments'});
+        expect(deployments.count).toBeGreaterThan(0)
       });
 
       test('should not change any commit', async() => {

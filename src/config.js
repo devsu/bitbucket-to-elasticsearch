@@ -1,6 +1,7 @@
 const path = require('path');
 const logger = require('./logger');
 const log = logger.child({'class': 'Config'});
+const _ = require('lodash');
 
 let configJson = {};
 try {
@@ -12,7 +13,7 @@ try {
 
 const env = process.env;
 
-module.exports = Object.assign({
+module.exports = _.merge(configJson, {
   'bitbucket': {
     'username': env.BB2ES_BITBUCKET_USERNAME,
     'clientId': env.BB2ES_BITBUCKET_CLIENT_ID,
@@ -50,4 +51,4 @@ module.exports = Object.assign({
     // we assume that the tags that match this pattern were deployed (used to calculate firstSuccessfulDeploymentDate)
     'deploymentTagsPattern': env.BB2ES_ANALYTICS_DEPLOYMENT_TAGS_PATTERN || '.+',
   },
-}, configJson);
+});

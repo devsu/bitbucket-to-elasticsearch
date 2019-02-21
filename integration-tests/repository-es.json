@@ -5,7 +5,12 @@
   "uuid": "{a95d72fe-441a-4d7d-bb69-2118647bd72b}",
   "fork_policy": "allow_forks",
   "name": "eslint-plugin-devsu",
-  "project": "DEV",
+  "project": {
+    "uuid": "{6cb7db6a-e001-48e7-ab37-b1968938140a}",
+    "key": "DEV",
+    "type": "project",
+    "name": "Devsu"
+  },
   "language": "javascript",
   "created_on": "2016-06-30T16:39:36.923050+00:00",
   "mainbranch": "master",

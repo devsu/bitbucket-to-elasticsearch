@@ -13,6 +13,8 @@ class Database {
     const commitsIndexExists = await this.elastic.indices.exists({'index': 'commits'});
     const statusesIndexExists = await this.elastic.indices.exists({'index': 'statuses'});
     const refsIndexExists = await this.elastic.indices.exists({'index': 'refs'});
+    const deploymentsIndexExists = await this.elastic.indices.exists({'index': 'deployments'});
+
     if (!repositoriesIndexExists) {
       await this.elastic.indices.create({'index': 'repositories'});
     }
@@ -25,6 +27,10 @@ class Database {
     if (!refsIndexExists) {
       await this.elastic.indices.create({'index': 'refs'});
     }
+    if (!deploymentsIndexExists) {
+      await this.elastic.indices.create({'index': 'deployments'});
+    }
+
   }
 
   async saveRepositories(data) {
@@ -41,6 +47,10 @@ class Database {
 
   async saveRefs(data) {
     return await this._saveAll('refs', 'ref', 'id', data);
+  }
+
+  async saveDeployments(data) {
+    return await this._saveAll('deployments', 'deployment', 'id', data);
   }
 
   async getRepository(uuid) {
