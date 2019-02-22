@@ -6,12 +6,9 @@ describe('config', () => {
       config = require('./config');
     });
 
-    test('should return default values', () => {
+    test.only('should return default values', () => {
       expect(config).toEqual(expect.objectContaining({
         'bitbucket': {
-          'username': expect.any(String),
-          "clientId": expect.any(String),
-          "clientSecret": expect.any(String),
           'defaultTimeout': expect.any(Number),
           'queueOptions': {
             'processRepo': {

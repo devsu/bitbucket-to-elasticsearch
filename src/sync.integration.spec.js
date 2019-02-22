@@ -29,6 +29,7 @@ describe('BitbucketSync integration tests', () => {
     delete config.bitbucket.clientId;
     delete config.bitbucket.clientSecret;
     config.elasticsearch = elasticConfig;
+    config.analytics.deploymentTagsPattern = 'v.+';
     bitbucketSync = new BitbucketSync(config);
     database = new Database(elasticConfig);
     await elastic.indices.delete({'index': '_all'});
@@ -278,6 +279,13 @@ describe('BitbucketSync integration tests', () => {
         await database.saveRefs([ref1, ref2]);
       });
 
+      test('should save a new deployment', async() => {
+        await bitbucketSync.updateFirstSuccessfulDeploymentDate(repositoryData.uuid);
+        await elastic.indices.refresh();
+        const deployments = await elastic.count({'index': 'deployments'});
+        expect(deployments.count).toBeGreaterThan(0)
+      });
+
       test('should set firstSuccessfulDeploymentDate on corresponding commits, but not on other commits', async() => {
         await bitbucketSync.updateFirstSuccessfulDeploymentDate(repositoryData.uuid);
         await elastic.indices.refresh();
@@ -332,13 +340,6 @@ describe('BitbucketSync integration tests', () => {
         ref2.target.hash = 'a';
         ref2.name = '###not-matching-name###';
         await database.saveRefs([ref1, ref2]);
-      });
-
-      test('should save a new deployment', async() => {
-        await bitbucketSync.updateFirstSuccessfulDeploymentDate(repositoryData.uuid);
-        await elastic.indices.refresh();
-        const deployments = await elastic.count({'index': 'deployments'});
-        expect(deployments.count).toBeGreaterThan(0)
       });
 
       test('should not change any commit', async() => {
