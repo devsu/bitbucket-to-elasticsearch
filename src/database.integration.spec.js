@@ -106,6 +106,64 @@ describe('Database integration tests', () => {
     });
   });
 
+  describe('reset()', () => {
+
+    beforeEach(async() => {
+      await database.setup();
+      await elastic.indices.flush({'waitIfOngoing': true});
+    });
+
+    test.only('should remove all repositories from database', async() => {
+      await database.reset();
+      try {
+        await elastic.search({'index': 'repositories', 'type': 'repository'});
+        fail('should fail');
+      } catch (e) {
+        expect(e.message).toContain('no such index');
+      }
+    });
+
+    test('should remove all commits from database', async() => {
+      await database.reset();
+      try {
+        await elastic.search({'index': 'commits', 'type': 'commit'});
+        fail('should fail');
+      } catch (e) {
+        expect(e.message).toContain('no such index');
+      }
+    });
+
+    test('should remove all statuses from database', async() => {
+      await database.reset();
+      try {
+        await elastic.search({'index': 'statuses', 'type': 'status'});
+        fail('should fail');
+      } catch (e) {
+        expect(e.message).toContain('no such index');
+      }
+    });
+
+    test('should remove all refs from database', async() => {
+      await database.reset();
+      try {
+        await elastic.search({'index': 'refs', 'type': 'ref'});
+        fail('should fail');
+      } catch (e) {
+        expect(e.message).toContain('no such index');
+      }
+    });
+
+    test('should remove all deployments from database', async() => {
+      await database.reset();
+      try {
+        await elastic.search({'index': 'deployments', 'type': 'deployment'});
+        fail('should fail');
+      } catch (e) {
+        expect(e.message).toContain('no such index');
+      }
+    });
+  });
+
   describe('saveRepositories()', () => {
     let data;
 

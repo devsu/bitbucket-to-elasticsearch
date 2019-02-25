@@ -4,10 +4,18 @@ const config = require('./src/config');
 const Sync = require('./src/sync');
 const logger = require('./src/logger');
 const log = logger.child({'class': 'index.js'});
+const program = require('commander');
+const Database = require('./src/database');
+
 
 const startRepoSync = async() => {
   const sync = new Sync(config);
   await sync.execute();
+};
+
+const restDatabase = async() => {
+  const database = new Database(config);
+  await database.reset()
 };
 
 process.on('unhandledRejection', (error) => {
@@ -16,4 +24,14 @@ process.on('unhandledRejection', (error) => {
   process.exit(1);
 });
 
-startRepoSync();
+
+program
+  .command('start')
+  .action(startRepoSync);
+
+program
+  .command('reset')
+  .action(restDatabase);
+
+
+program.parse(process.argv);
