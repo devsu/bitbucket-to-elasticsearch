@@ -137,7 +137,7 @@ describe('BitbucketSync', () => {
   });
 
   describe('parseEmail()', () => {
-    test.only('should not fail when raw is missing an email', () => {
+    test('should not fail when raw is missing an email', () => {
       const raw = "Jaime Gonzalez";
       expect(BitbucketSync.parseEmail(raw)).toEqual("");
     })

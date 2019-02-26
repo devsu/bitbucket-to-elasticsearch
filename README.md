@@ -48,11 +48,15 @@ To get the full list of environment variables that can be set check `src/config.
 
 ### Run
 
-Then just run:
+To run:
 
 ```
-bitbucket-to-elasticsearch | bunyan
+bitbucket-to-elasticsearch start | bunyan
 ```
+
+### Clear DB
+
+bitbucket-to-elasticsearch reset | bunyan
 
 The `| bunyan` part is optional. It's to get nicer console logging (instead of the default json logger). To use bunyan install it first using `yarn global add bunyan`.
 
