@@ -6,11 +6,18 @@
     "name": "eslint-plugin-devsu",
     "full_name": "devsu/eslint-plugin-devsu"
   },
+  "project": {
+    "uuid": "{6cb7db6a-e001-48e7-ab37-b1968938140a}",
+    "key": "DEV",
+    "type": "project",
+    "name": "Devsu"
+  },
   "author": {
     "raw": "Jaime Gonzalez <jgonzalez@devsu.com>",
     "type": "author",
     "user": {
       "account_id": "557058:612153e1-32c8-4ff7-9a95-194fc260be5e",
+      "email": "jgonzalez@devsu.com",
       "username": "jgonzalez87",
       "display_name": "Jaime Gonzalez",
       "type": "user",

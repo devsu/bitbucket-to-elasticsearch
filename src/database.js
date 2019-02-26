@@ -95,6 +95,14 @@ class Database {
     return await this._getAll('refs', 'ref', query);
   }
 
+  async reset(){
+    await this.elastic.indices.delete({'index': 'repositories'});
+    await this.elastic.indices.delete({'index': 'commits'});
+    await this.elastic.indices.delete({'index': 'statuses'});
+    await this.elastic.indices.delete({'index': 'refs'});
+    await this.elastic.indices.delete({'index': 'deployments'});
+  }
+
   async _getOne(index, type, id) {
     try {
       const response = await this.elastic.get({index, type, id});

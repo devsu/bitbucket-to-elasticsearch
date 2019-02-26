@@ -53,7 +53,7 @@ module.exports = class Sync {
     }
 
     await Promise.all([
-      this.synchronizeCommits(repo.slug, minDate),
+      this.synchronizeCommits(repo.slug, minDate, repo.project),
       this.synchronizeRefs(repo.slug),
     ]);
     // Save the repo only after all its commits and refs have been processed.
@@ -72,7 +72,7 @@ module.exports = class Sync {
     );
   }
 
-  async synchronizeCommits(repoSlug, minDate) {
+  async synchronizeCommits(repoSlug, minDate, project) {
     const commitsIterator = this.bitbucket.getCommitsIterator(repoSlug, minDate);
     const promises = [];
     for await (const data of commitsIterator) {
@@ -85,7 +85,7 @@ module.exports = class Sync {
       }
       const nodes = commits.map((commit) => commit.hash);
       promises.push(...nodes.map((node) => this.synchronizeStatuses(repoSlug, node)));
-      promises.push(this.database.saveCommits(Sync.transformCommits(commits)));
+      promises.push(this.database.saveCommits(Sync.transformCommits(commits, project)));
     }
     await Promise.all(promises);
   }
@@ -184,16 +184,24 @@ module.exports = class Sync {
     return data.map(Sync.transformRepository);
   }
 
-  static transformCommit(data) {
+  static transformCommit(data, project) {
     const transformed = Object.assign({}, data);
     delete transformed.links;
+    transformed.project = this.transformProject(project);
     if (transformed.author.user) {
       delete transformed.author.user.links;
+      transformed.author.user.email = this.parseEmail(transformed.author.raw);
     }
     delete transformed.repository.links;
     delete transformed.summary;
     transformed.parents = data.parents.map((parent) => parent.hash);
     return transformed;
+  }
+
+  static parseEmail(rawName) {
+    const startIndex = rawName.indexOf("<") + 1;
+    const endIndex = rawName.indexOf(">");
+    return rawName.substring(startIndex, endIndex);
   }
 
   static transformProject(data) {
@@ -202,8 +210,8 @@ module.exports = class Sync {
     return transformed
   }
 
-  static transformCommits(data) {
-    return data.map(Sync.transformCommit);
+  static transformCommits(data, project) {
+    return data.map( (commitsData) => Sync.transformCommit(commitsData, project));
   }
 
   static transformStatus(data) {
@@ -226,6 +234,7 @@ module.exports = class Sync {
     delete transformed.default_merge_strategy;
     delete transformed.merge_strategies;
     transformed.target = Sync.transformCommit(transformed.target);
+    delete transformed.target.project;
     if (transformed.tagger && transformed.tagger.user) {
       delete transformed.tagger.user.links;
     }
