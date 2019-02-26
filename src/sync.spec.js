@@ -136,6 +136,12 @@ describe('BitbucketSync', () => {
     });
   });
 
+  describe('parseEmail()', () => {
+    test.only('should not fail when raw is missing an email', () => {
+      const raw = "Jaime Gonzalez";
+      expect(BitbucketSync.parseEmail(raw)).toEqual("");
+    })
+  });
   // TODO: Missing tests (functionality actually implemented, but no tests implemented)
   // - should not fail when repo has no commits
   // - should not fail when commit has no build statuses
