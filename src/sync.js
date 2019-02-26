@@ -189,11 +189,18 @@ module.exports = class Sync {
     delete transformed.links;
     if (transformed.author.user) {
       delete transformed.author.user.links;
+      transformed.author.user.email = this.parseEmail(transformed.author.raw);
     }
     delete transformed.repository.links;
     delete transformed.summary;
     transformed.parents = data.parents.map((parent) => parent.hash);
     return transformed;
+  }
+
+  static parseEmail(rawName) {
+    const startIndex = rawName.indexOf("<") + 1;
+    const endIndex = rawName.indexOf(">");
+    return rawName.substring(startIndex, endIndex);
   }
 
   static transformProject(data) {
