@@ -67,7 +67,10 @@ describe('BitbucketSync', () => {
 
   describe('transformCommit()', () => {
     test('should transform bitbucket data to elastic search data', () => {
-      const actual = BitbucketSync.transformCommit(bitbucketCommitData);
+      const actual = BitbucketSync.transformCommit(
+        bitbucketCommitData,
+        bitbucketRepositoryData.project
+      );
       expect(actual).toEqual(esCommitData);
     });
 
@@ -76,14 +79,19 @@ describe('BitbucketSync', () => {
       delete bitbucketCommitDataCopy.author.user;
       const esCommitDataCopy = Object.assign({}, esCommitData);
       delete esCommitDataCopy.author.user;
-      const actual = BitbucketSync.transformCommit(bitbucketCommitDataCopy);
+      const actual = BitbucketSync.transformCommit(
+        bitbucketCommitDataCopy,
+        bitbucketRepositoryData.project
+      );
       expect(actual).toEqual(esCommitDataCopy);
     });
   });
 
   describe('transformCommits()', () => {
     test('should transform bitbucket data to elastic search data', () => {
-      const actual = BitbucketSync.transformCommits([bitbucketCommitData, bitbucketCommitData]);
+      const actual = BitbucketSync.transformCommits(
+        [bitbucketCommitData, bitbucketCommitData],
+        bitbucketRepositoryData.project);
       expect(actual).toEqual([esCommitData, esCommitData]);
     });
   });
