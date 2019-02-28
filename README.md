@@ -55,9 +55,9 @@ bitbucket-to-elasticsearch start | bunyan
 ```
 
 ### Clear DB
-
+```
 bitbucket-to-elasticsearch reset | bunyan
-
+```
 The `| bunyan` part is optional. It's to get nicer console logging (instead of the default json logger). To use bunyan install it first using `yarn global add bunyan`.
 
 ## License
