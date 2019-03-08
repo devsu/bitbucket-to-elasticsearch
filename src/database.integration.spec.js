@@ -113,7 +113,7 @@ describe('Database integration tests', () => {
       await elastic.indices.flush({'waitIfOngoing': true});
     });
 
-    test.only('should remove all repositories from database', async() => {
+    test('should remove all repositories from database', async() => {
       await database.reset();
       try {
         await elastic.search({'index': 'repositories', 'type': 'repository'});
