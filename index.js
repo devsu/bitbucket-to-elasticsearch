@@ -7,14 +7,15 @@ const log = logger.child({'class': 'index.js'});
 const program = require('commander');
 const Database = require('./src/database');
 
+const databaseConfig = config.elasticsearch;
 
 const startRepoSync = async() => {
   const sync = new Sync(config);
   await sync.execute();
 };
 
-const restDatabase = async() => {
-  const database = new Database(config);
+const resetDatabase = async() => {
+  const database = new Database(databaseConfig);
   await database.reset()
 };
 
@@ -31,7 +32,7 @@ program
 
 program
   .command('reset')
-  .action(restDatabase);
+  .action(resetDatabase);
 
 
 program.parse(process.argv);

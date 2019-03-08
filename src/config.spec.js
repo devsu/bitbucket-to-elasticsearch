@@ -6,7 +6,7 @@ describe('config', () => {
       config = require('./config');
     });
 
-    test.only('should return default values', () => {
+    test('should return default values', () => {
       expect(config).toEqual(expect.objectContaining({
         'bitbucket': {
           'defaultTimeout': expect.any(Number),
